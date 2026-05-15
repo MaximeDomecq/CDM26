@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Called by a Vercel cron job every 5 minutes during the tournament
 // Secured with a shared secret in the Authorization header
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     score: { fullTime: { home: number | null; away: number | null } };
   }[] = json.matches ?? [];
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   let updated = 0;
   for (const m of apiMatches) {
