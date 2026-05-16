@@ -1,0 +1,151 @@
+import { createClient } from "@/lib/supabase/server";
+import { format, parseISO } from "date-fns";
+import { fr } from "date-fns/locale";
+import { flag } from "@/lib/teams";
+
+export const revalidate = 300;
+
+const CEST = 2 * 3600 * 1000;
+
+// France matches → also on M6. All matches on beIN Sports.
+const FRANCE_TEAMS = ["France"];
+
+function cestDate(utcIso: string) {
+  return new Date(parseISO(utcIso).getTime() + CEST);
+}
+
+function channels(homeTeam: string, awayTeam: string): string[] {
+  const ch = ["beIN Sports"];
+  if (FRANCE_TEAMS.includes(homeTeam) || FRANCE_TEAMS.includes(awayTeam)) {
+    ch.unshift("M6");
+  }
+  return ch;
+}
+
+export default async function CalendrierPage() {
+  const supabase = await createClient();
+  const { data: matches } = await supabase
+    .from("matches")
+    .select("id, home_team, away_team, kickoff_at, phase, home_score, away_score")
+    .order("kickoff_at");
+
+  if (!matches || matches.length === 0) {
+    return <p className="text-gray-400 dark:text-gray-600">Aucun match programmé.</p>;
+  }
+
+  // Group by CEST date
+  const byDay: Record<string, typeof matches> = {};
+  for (const m of matches) {
+    const key = format(cestDate(m.kickoff_at), "yyyy-MM-dd");
+    if (!byDay[key]) byDay[key] = [];
+    byDay[key].push(m);
+  }
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-black text-gray-900 dark:text-white">Calendrier des matchs</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+          Tous les horaires en heure de Paris (CEST, UTC+2) · Phase de groupes du 11 juin au 27 juin 2026
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block px-2 py-0.5 rounded bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-400 font-semibold text-[11px]">M6</span>
+            Diffusion gratuite (54 matchs — confirmés progressivement)
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 font-semibold text-[11px]">beIN</span>
+            Tous les matchs (abonnement)
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        {Object.entries(byDay).map(([dateKey, dayMatches]) => {
+          const date = parseISO(dateKey);
+          const label = format(date, "EEEE d MMMM yyyy", { locale: fr });
+
+          return (
+            <section key={dateKey}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="bg-wc-header text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider">
+                  {label}
+                </div>
+                <span className="text-xs text-gray-400 dark:text-gray-600">
+                  {dayMatches.length} match{dayMatches.length > 1 ? "s" : ""}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {dayMatches.map((m) => {
+                  const cestTime = cestDate(m.kickoff_at);
+                  const chs = channels(m.home_team, m.away_team);
+                  const hasResult = m.home_score !== null && m.away_score !== null;
+                  const isFrance = m.home_team === "France" || m.away_team === "France";
+
+                  return (
+                    <div
+                      key={m.id}
+                      className={`flex items-center gap-4 bg-white dark:bg-gray-900 rounded-xl border px-4 py-3 transition-all hover:shadow-card-hover ${
+                        isFrance
+                          ? "border-blue-200 dark:border-blue-900/60 bg-blue-50/30 dark:bg-blue-950/20"
+                          : "border-gray-100 dark:border-gray-800"
+                      }`}
+                    >
+                      {/* Time */}
+                      <div className="flex-shrink-0 w-14 text-center">
+                        <div className="font-black text-base text-gray-900 dark:text-white font-mono">
+                          {format(cestTime, "HH:mm")}
+                        </div>
+                        <div className="text-[10px] text-gray-400 dark:text-gray-600 uppercase tracking-wide">CEST</div>
+                      </div>
+
+                      {/* Match */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg flex-shrink-0">{flag(m.home_team)}</span>
+                          <span className="font-bold text-gray-900 dark:text-white text-sm truncate">{m.home_team}</span>
+                          {hasResult ? (
+                            <span className="font-black text-gray-900 dark:text-white mx-1 flex-shrink-0">
+                              {m.home_score} – {m.away_score}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300 dark:text-gray-700 mx-1 flex-shrink-0 text-sm font-bold">vs</span>
+                          )}
+                          <span className="font-bold text-gray-900 dark:text-white text-sm truncate">{m.away_team}</span>
+                          <span className="text-lg flex-shrink-0">{flag(m.away_team)}</span>
+                        </div>
+                        <div className="text-xs text-gray-400 dark:text-gray-600 mt-0.5">{m.phase}</div>
+                      </div>
+
+                      {/* Channels */}
+                      <div className="flex-shrink-0 flex items-center gap-1.5">
+                        {chs.map((ch) => (
+                          <span
+                            key={ch}
+                            className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                              ch === "M6"
+                                ? "bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-400"
+                                : "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400"
+                            }`}
+                          >
+                            {ch === "beIN Sports" ? "beIN" : ch}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+
+      <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl text-xs text-amber-700 dark:text-amber-400">
+        <strong>Note :</strong> Les matchs sur M6 seront confirmés officiellement par le Groupe M6. Seuls les matchs de la France sont indiqués avec certitude sur M6.
+        beIN Sports diffuse l&apos;intégralité des 104 matchs (abonnement requis).
+      </div>
+    </div>
+  );
+}

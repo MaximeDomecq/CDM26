@@ -23,25 +23,24 @@ export default function CreateLeaguePage() {
     if (!user) return;
 
     const invite_code = generateCode();
+    const league_id = crypto.randomUUID();
 
-    const { data: league, error: leagueError } = await supabase
+    const { error: leagueError } = await supabase
       .from("leagues")
-      .insert({ name, invite_code, created_by: user.id })
-      .select()
-      .single();
+      .insert({ id: league_id, name, invite_code, created_by: user.id });
 
-    if (leagueError || !league) {
-      setError("Erreur lors de la création de la ligue.");
+    if (leagueError) {
+      setError(`Erreur: ${leagueError.message}`);
       setLoading(false);
       return;
     }
 
     await supabase.from("league_members").insert({
-      league_id: league.id,
+      league_id,
       user_id: user.id,
     });
 
-    router.push(`/dashboard/leagues/${league.id}`);
+    router.push(`/dashboard/leagues/${league_id}`);
   }
 
   return (

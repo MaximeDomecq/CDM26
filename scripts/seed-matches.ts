@@ -1,9 +1,3 @@
-/**
- * Run with: npx tsx scripts/seed-matches.ts
- * Seeds all 48 World Cup 2026 group stage matches into Supabase.
- * Requires .env.local to be configured.
- */
-
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 import { resolve } from "path";
@@ -15,105 +9,126 @@ const supabase = createClient(
   process.env.SUPABASE_SECRET_KEY!
 );
 
+// All times UTC. BST = UTC+1, Paris/CEST = UTC+2.
+// Source: Sky Sports confirmed schedule (verified June 2026).
 const matches = [
-  // Group A
-  { home_team: "Mexique", away_team: "Équateur", kickoff_at: "2026-06-11T23:00:00Z", phase: "Groupe A", api_id: 10001 },
-  { home_team: "États-Unis", away_team: "Panama", kickoff_at: "2026-06-12T02:00:00Z", phase: "Groupe A", api_id: 10002 },
-  { home_team: "États-Unis", away_team: "Mexique", kickoff_at: "2026-06-19T02:00:00Z", phase: "Groupe A", api_id: 10003 },
-  { home_team: "Panama", away_team: "Équateur", kickoff_at: "2026-06-19T23:00:00Z", phase: "Groupe A", api_id: 10004 },
-  { home_team: "Panama", away_team: "Mexique", kickoff_at: "2026-06-25T22:00:00Z", phase: "Groupe A", api_id: 10005 },
-  { home_team: "Équateur", away_team: "États-Unis", kickoff_at: "2026-06-25T22:00:00Z", phase: "Groupe A", api_id: 10006 },
-  // Group B
-  { home_team: "Argentine", away_team: "Pérou", kickoff_at: "2026-06-12T20:00:00Z", phase: "Groupe B", api_id: 10007 },
-  { home_team: "Canada", away_team: "Chili", kickoff_at: "2026-06-12T23:00:00Z", phase: "Groupe B", api_id: 10008 },
-  { home_team: "Argentine", away_team: "Canada", kickoff_at: "2026-06-20T02:00:00Z", phase: "Groupe B", api_id: 10009 },
-  { home_team: "Chili", away_team: "Pérou", kickoff_at: "2026-06-20T02:00:00Z", phase: "Groupe B", api_id: 10010 },
-  { home_team: "Argentine", away_team: "Chili", kickoff_at: "2026-06-26T22:00:00Z", phase: "Groupe B", api_id: 10011 },
-  { home_team: "Pérou", away_team: "Canada", kickoff_at: "2026-06-26T22:00:00Z", phase: "Groupe B", api_id: 10012 },
-  // Group C
-  { home_team: "Mexique", away_team: "Sénégal", kickoff_at: "2026-06-13T02:00:00Z", phase: "Groupe C", api_id: 10013 },
-  { home_team: "Pays-Bas", away_team: "Côte d'Ivoire", kickoff_at: "2026-06-13T20:00:00Z", phase: "Groupe C", api_id: 10014 },
-  { home_team: "Pays-Bas", away_team: "Mexique", kickoff_at: "2026-06-20T23:00:00Z", phase: "Groupe C", api_id: 10015 },
-  { home_team: "Côte d'Ivoire", away_team: "Sénégal", kickoff_at: "2026-06-21T02:00:00Z", phase: "Groupe C", api_id: 10016 },
-  { home_team: "Côte d'Ivoire", away_team: "Mexique", kickoff_at: "2026-06-27T22:00:00Z", phase: "Groupe C", api_id: 10017 },
-  { home_team: "Sénégal", away_team: "Pays-Bas", kickoff_at: "2026-06-27T22:00:00Z", phase: "Groupe C", api_id: 10018 },
-  // Group D
-  { home_team: "Brésil", away_team: "Allemagne", kickoff_at: "2026-06-14T02:00:00Z", phase: "Groupe D", api_id: 10019 },
-  { home_team: "Japon", away_team: "Croatie", kickoff_at: "2026-06-13T23:00:00Z", phase: "Groupe D", api_id: 10020 },
-  { home_team: "Brésil", away_team: "Japon", kickoff_at: "2026-06-21T20:00:00Z", phase: "Groupe D", api_id: 10021 },
-  { home_team: "Croatie", away_team: "Allemagne", kickoff_at: "2026-06-21T23:00:00Z", phase: "Groupe D", api_id: 10022 },
-  { home_team: "Brésil", away_team: "Croatie", kickoff_at: "2026-06-28T22:00:00Z", phase: "Groupe D", api_id: 10023 },
-  { home_team: "Allemagne", away_team: "Japon", kickoff_at: "2026-06-28T22:00:00Z", phase: "Groupe D", api_id: 10024 },
-  // Group E
-  { home_team: "Espagne", away_team: "Maroc", kickoff_at: "2026-06-14T20:00:00Z", phase: "Groupe E", api_id: 10025 },
-  { home_team: "Belgique", away_team: "Serbie", kickoff_at: "2026-06-15T02:00:00Z", phase: "Groupe E", api_id: 10026 },
-  { home_team: "Espagne", away_team: "Belgique", kickoff_at: "2026-06-22T02:00:00Z", phase: "Groupe E", api_id: 10027 },
-  { home_team: "Maroc", away_team: "Serbie", kickoff_at: "2026-06-22T20:00:00Z", phase: "Groupe E", api_id: 10028 },
-  { home_team: "Espagne", away_team: "Serbie", kickoff_at: "2026-06-29T22:00:00Z", phase: "Groupe E", api_id: 10029 },
-  { home_team: "Maroc", away_team: "Belgique", kickoff_at: "2026-06-29T22:00:00Z", phase: "Groupe E", api_id: 10030 },
-  // Group F
-  { home_team: "France", away_team: "Arabie Saoudite", kickoff_at: "2026-06-15T20:00:00Z", phase: "Groupe F", api_id: 10031 },
-  { home_team: "Danemark", away_team: "Tunisie", kickoff_at: "2026-06-15T23:00:00Z", phase: "Groupe F", api_id: 10032 },
-  { home_team: "France", away_team: "Danemark", kickoff_at: "2026-06-22T23:00:00Z", phase: "Groupe F", api_id: 10033 },
-  { home_team: "Tunisie", away_team: "Arabie Saoudite", kickoff_at: "2026-06-23T02:00:00Z", phase: "Groupe F", api_id: 10034 },
-  { home_team: "France", away_team: "Tunisie", kickoff_at: "2026-06-30T22:00:00Z", phase: "Groupe F", api_id: 10035 },
-  { home_team: "Arabie Saoudite", away_team: "Danemark", kickoff_at: "2026-06-30T22:00:00Z", phase: "Groupe F", api_id: 10036 },
-  // Group G
-  { home_team: "Portugal", away_team: "Cameroun", kickoff_at: "2026-06-16T02:00:00Z", phase: "Groupe G", api_id: 10037 },
-  { home_team: "Angola", away_team: "Indonésie", kickoff_at: "2026-06-16T20:00:00Z", phase: "Groupe G", api_id: 10038 },
-  { home_team: "Portugal", away_team: "Angola", kickoff_at: "2026-06-23T20:00:00Z", phase: "Groupe G", api_id: 10039 },
-  { home_team: "Indonésie", away_team: "Cameroun", kickoff_at: "2026-06-23T23:00:00Z", phase: "Groupe G", api_id: 10040 },
-  { home_team: "Portugal", away_team: "Indonésie", kickoff_at: "2026-07-01T22:00:00Z", phase: "Groupe G", api_id: 10041 },
-  { home_team: "Cameroun", away_team: "Angola", kickoff_at: "2026-07-01T22:00:00Z", phase: "Groupe G", api_id: 10042 },
-  // Group H
-  { home_team: "Angleterre", away_team: "Nigéria", kickoff_at: "2026-06-17T02:00:00Z", phase: "Groupe H", api_id: 10043 },
-  { home_team: "Australie", away_team: "Irak", kickoff_at: "2026-06-17T20:00:00Z", phase: "Groupe H", api_id: 10044 },
-  { home_team: "Angleterre", away_team: "Australie", kickoff_at: "2026-06-24T02:00:00Z", phase: "Groupe H", api_id: 10045 },
-  { home_team: "Irak", away_team: "Nigéria", kickoff_at: "2026-06-24T20:00:00Z", phase: "Groupe H", api_id: 10046 },
-  { home_team: "Angleterre", away_team: "Irak", kickoff_at: "2026-07-02T22:00:00Z", phase: "Groupe H", api_id: 10047 },
-  { home_team: "Nigéria", away_team: "Australie", kickoff_at: "2026-07-02T22:00:00Z", phase: "Groupe H", api_id: 10048 },
-  // Group I
-  { home_team: "Italie", away_team: "Nouvelle-Zélande", kickoff_at: "2026-06-17T23:00:00Z", phase: "Groupe I", api_id: 10049 },
-  { home_team: "Colombie", away_team: "Slovaquie", kickoff_at: "2026-06-18T02:00:00Z", phase: "Groupe I", api_id: 10050 },
-  { home_team: "Italie", away_team: "Colombie", kickoff_at: "2026-06-24T23:00:00Z", phase: "Groupe I", api_id: 10051 },
-  { home_team: "Slovaquie", away_team: "Nouvelle-Zélande", kickoff_at: "2026-06-25T02:00:00Z", phase: "Groupe I", api_id: 10052 },
-  { home_team: "Italie", away_team: "Slovaquie", kickoff_at: "2026-07-03T22:00:00Z", phase: "Groupe I", api_id: 10053 },
-  { home_team: "Nouvelle-Zélande", away_team: "Colombie", kickoff_at: "2026-07-03T22:00:00Z", phase: "Groupe I", api_id: 10054 },
-  // Group J
-  { home_team: "Uruguay", away_team: "Afrique du Sud", kickoff_at: "2026-06-18T20:00:00Z", phase: "Groupe J", api_id: 10055 },
-  { home_team: "Chine", away_team: "Thaïlande", kickoff_at: "2026-06-18T23:00:00Z", phase: "Groupe J", api_id: 10056 },
-  { home_team: "Uruguay", away_team: "Chine", kickoff_at: "2026-06-25T20:00:00Z", phase: "Groupe J", api_id: 10057 },
-  { home_team: "Thaïlande", away_team: "Afrique du Sud", kickoff_at: "2026-06-26T02:00:00Z", phase: "Groupe J", api_id: 10058 },
-  { home_team: "Uruguay", away_team: "Thaïlande", kickoff_at: "2026-07-04T22:00:00Z", phase: "Groupe J", api_id: 10059 },
-  { home_team: "Afrique du Sud", away_team: "Chine", kickoff_at: "2026-07-04T22:00:00Z", phase: "Groupe J", api_id: 10060 },
-  // Group K
-  { home_team: "Corée du Sud", away_team: "Venezuela", kickoff_at: "2026-06-19T20:00:00Z", phase: "Groupe K", api_id: 10061 },
-  { home_team: "Ghana", away_team: "Iran", kickoff_at: "2026-06-20T20:00:00Z", phase: "Groupe K", api_id: 10062 },
-  { home_team: "Corée du Sud", away_team: "Ghana", kickoff_at: "2026-06-26T20:00:00Z", phase: "Groupe K", api_id: 10063 },
-  { home_team: "Iran", away_team: "Venezuela", kickoff_at: "2026-06-27T02:00:00Z", phase: "Groupe K", api_id: 10064 },
-  { home_team: "Corée du Sud", away_team: "Iran", kickoff_at: "2026-07-05T22:00:00Z", phase: "Groupe K", api_id: 10065 },
-  { home_team: "Venezuela", away_team: "Ghana", kickoff_at: "2026-07-05T22:00:00Z", phase: "Groupe K", api_id: 10066 },
-  // Group L
-  { home_team: "Suisse", away_team: "Cameroun", kickoff_at: "2026-06-19T23:00:00Z", phase: "Groupe L", api_id: 10067 },
-  { home_team: "Nigéria", away_team: "Mexique", kickoff_at: "2026-06-20T23:00:00Z", phase: "Groupe L", api_id: 10068 },
-  { home_team: "Suisse", away_team: "Nigéria", kickoff_at: "2026-06-27T20:00:00Z", phase: "Groupe L", api_id: 10069 },
-  { home_team: "Mexique", away_team: "Cameroun", kickoff_at: "2026-06-28T02:00:00Z", phase: "Groupe L", api_id: 10070 },
-  { home_team: "Suisse", away_team: "Mexique", kickoff_at: "2026-07-06T22:00:00Z", phase: "Groupe L", api_id: 10071 },
-  { home_team: "Cameroun", away_team: "Nigéria", kickoff_at: "2026-07-06T22:00:00Z", phase: "Groupe L", api_id: 10072 },
+  // ── GROUPE A ── Mexique · Afrique du Sud · Corée du Sud · Tchéquie ──
+  { home_team: "Mexique",        away_team: "Afrique du Sud", kickoff_at: "2026-06-11T19:00:00Z", phase: "Groupe A" },
+  { home_team: "Corée du Sud",   away_team: "Tchéquie",       kickoff_at: "2026-06-12T02:00:00Z", phase: "Groupe A" },
+  { home_team: "Tchéquie",       away_team: "Afrique du Sud", kickoff_at: "2026-06-18T16:00:00Z", phase: "Groupe A" },
+  { home_team: "Mexique",        away_team: "Corée du Sud",   kickoff_at: "2026-06-19T01:00:00Z", phase: "Groupe A" },
+  { home_team: "Afrique du Sud", away_team: "Corée du Sud",   kickoff_at: "2026-06-25T01:00:00Z", phase: "Groupe A" },
+  { home_team: "Tchéquie",       away_team: "Mexique",        kickoff_at: "2026-06-25T01:00:00Z", phase: "Groupe A" },
+
+  // ── GROUPE B ── Canada · Bosnie-Herzégovine · Qatar · Suisse ──
+  { home_team: "Canada",              away_team: "Bosnie-Herzégovine", kickoff_at: "2026-06-12T19:00:00Z", phase: "Groupe B" },
+  { home_team: "Qatar",               away_team: "Suisse",             kickoff_at: "2026-06-13T19:00:00Z", phase: "Groupe B" },
+  { home_team: "Suisse",              away_team: "Bosnie-Herzégovine", kickoff_at: "2026-06-18T19:00:00Z", phase: "Groupe B" },
+  { home_team: "Canada",              away_team: "Qatar",              kickoff_at: "2026-06-18T22:00:00Z", phase: "Groupe B" },
+  { home_team: "Suisse",              away_team: "Canada",             kickoff_at: "2026-06-24T19:00:00Z", phase: "Groupe B" },
+  { home_team: "Bosnie-Herzégovine",  away_team: "Qatar",              kickoff_at: "2026-06-24T19:00:00Z", phase: "Groupe B" },
+
+  // ── GROUPE C ── Écosse · Brésil · Maroc · Haïti ──
+  { home_team: "Haïti",   away_team: "Écosse", kickoff_at: "2026-06-14T01:00:00Z", phase: "Groupe C" },
+  { home_team: "Brésil",  away_team: "Maroc",  kickoff_at: "2026-06-13T22:00:00Z", phase: "Groupe C" },
+  { home_team: "Écosse",  away_team: "Maroc",  kickoff_at: "2026-06-19T22:00:00Z", phase: "Groupe C" },
+  { home_team: "Brésil",  away_team: "Haïti",  kickoff_at: "2026-06-20T00:30:00Z", phase: "Groupe C" },
+  { home_team: "Maroc",   away_team: "Haïti",  kickoff_at: "2026-06-24T22:00:00Z", phase: "Groupe C" },
+  { home_team: "Écosse",  away_team: "Brésil", kickoff_at: "2026-06-24T22:00:00Z", phase: "Groupe C" },
+
+  // ── GROUPE D ── États-Unis · Paraguay · Australie · Turquie ──
+  { home_team: "États-Unis", away_team: "Paraguay",  kickoff_at: "2026-06-13T01:00:00Z", phase: "Groupe D" },
+  { home_team: "Australie",  away_team: "Turquie",   kickoff_at: "2026-06-14T04:00:00Z", phase: "Groupe D" },
+  { home_team: "États-Unis", away_team: "Australie", kickoff_at: "2026-06-19T19:00:00Z", phase: "Groupe D" },
+  { home_team: "Turquie",    away_team: "Paraguay",  kickoff_at: "2026-06-20T03:00:00Z", phase: "Groupe D" },
+  { home_team: "Turquie",    away_team: "États-Unis", kickoff_at: "2026-06-26T02:00:00Z", phase: "Groupe D" },
+  { home_team: "Paraguay",   away_team: "Australie", kickoff_at: "2026-06-26T02:00:00Z", phase: "Groupe D" },
+
+  // ── GROUPE E ── Équateur · Allemagne · Curaçao · Côte d'Ivoire ──
+  { home_team: "Côte d'Ivoire", away_team: "Équateur",      kickoff_at: "2026-06-14T23:00:00Z", phase: "Groupe E" },
+  { home_team: "Allemagne",     away_team: "Curaçao",        kickoff_at: "2026-06-14T17:00:00Z", phase: "Groupe E" },
+  { home_team: "Allemagne",     away_team: "Côte d'Ivoire",  kickoff_at: "2026-06-20T20:00:00Z", phase: "Groupe E" },
+  { home_team: "Équateur",      away_team: "Curaçao",        kickoff_at: "2026-06-21T00:00:00Z", phase: "Groupe E" },
+  { home_team: "Curaçao",       away_team: "Côte d'Ivoire",  kickoff_at: "2026-06-25T20:00:00Z", phase: "Groupe E" },
+  { home_team: "Équateur",      away_team: "Allemagne",      kickoff_at: "2026-06-25T20:00:00Z", phase: "Groupe E" },
+
+  // ── GROUPE F ── Japon · Suède · Tunisie · Pays-Bas ──
+  { home_team: "Pays-Bas", away_team: "Japon",   kickoff_at: "2026-06-14T20:00:00Z", phase: "Groupe F" },
+  { home_team: "Suède",    away_team: "Tunisie", kickoff_at: "2026-06-15T02:00:00Z", phase: "Groupe F" },
+  { home_team: "Pays-Bas", away_team: "Suède",   kickoff_at: "2026-06-20T17:00:00Z", phase: "Groupe F" },
+  { home_team: "Tunisie",  away_team: "Japon",   kickoff_at: "2026-06-21T04:00:00Z", phase: "Groupe F" },
+  { home_team: "Tunisie",  away_team: "Pays-Bas", kickoff_at: "2026-06-25T23:00:00Z", phase: "Groupe F" },
+  { home_team: "Japon",    away_team: "Suède",   kickoff_at: "2026-06-25T23:00:00Z", phase: "Groupe F" },
+
+  // ── GROUPE G ── Belgique · Égypte · Iran · Nouvelle-Zélande ──
+  { home_team: "Belgique",          away_team: "Égypte",           kickoff_at: "2026-06-15T19:00:00Z", phase: "Groupe G" },
+  { home_team: "Iran",              away_team: "Nouvelle-Zélande", kickoff_at: "2026-06-16T01:00:00Z", phase: "Groupe G" },
+  { home_team: "Belgique",          away_team: "Iran",             kickoff_at: "2026-06-21T19:00:00Z", phase: "Groupe G" },
+  { home_team: "Nouvelle-Zélande",  away_team: "Égypte",           kickoff_at: "2026-06-22T01:00:00Z", phase: "Groupe G" },
+  { home_team: "Nouvelle-Zélande",  away_team: "Belgique",         kickoff_at: "2026-06-27T03:00:00Z", phase: "Groupe G" },
+  { home_team: "Égypte",            away_team: "Iran",             kickoff_at: "2026-06-27T03:00:00Z", phase: "Groupe G" },
+
+  // ── GROUPE H ── Espagne · Cap-Vert · Arabie Saoudite · Uruguay ──
+  { home_team: "Espagne",        away_team: "Cap-Vert",       kickoff_at: "2026-06-15T16:00:00Z", phase: "Groupe H" },
+  { home_team: "Arabie Saoudite", away_team: "Uruguay",       kickoff_at: "2026-06-15T22:00:00Z", phase: "Groupe H" },
+  { home_team: "Espagne",        away_team: "Arabie Saoudite", kickoff_at: "2026-06-21T16:00:00Z", phase: "Groupe H" },
+  { home_team: "Uruguay",        away_team: "Cap-Vert",       kickoff_at: "2026-06-21T22:00:00Z", phase: "Groupe H" },
+  { home_team: "Cap-Vert",       away_team: "Arabie Saoudite", kickoff_at: "2026-06-27T00:00:00Z", phase: "Groupe H" },
+  { home_team: "Uruguay",        away_team: "Espagne",        kickoff_at: "2026-06-27T00:00:00Z", phase: "Groupe H" },
+
+  // ── GROUPE I ── France · Sénégal · Irak · Norvège ──
+  { home_team: "France",   away_team: "Sénégal", kickoff_at: "2026-06-16T19:00:00Z", phase: "Groupe I" },
+  { home_team: "Irak",     away_team: "Norvège", kickoff_at: "2026-06-16T22:00:00Z", phase: "Groupe I" },
+  { home_team: "France",   away_team: "Irak",    kickoff_at: "2026-06-22T21:00:00Z", phase: "Groupe I" },
+  { home_team: "Norvège",  away_team: "Sénégal", kickoff_at: "2026-06-23T00:00:00Z", phase: "Groupe I" },
+  { home_team: "Norvège",  away_team: "France",  kickoff_at: "2026-06-26T19:00:00Z", phase: "Groupe I" },
+  { home_team: "Sénégal",  away_team: "Irak",    kickoff_at: "2026-06-26T19:00:00Z", phase: "Groupe I" },
+
+  // ── GROUPE J ── Argentine · Algérie · Autriche · Jordanie ──
+  { home_team: "Argentine", away_team: "Algérie",  kickoff_at: "2026-06-17T01:00:00Z", phase: "Groupe J" },
+  { home_team: "Autriche",  away_team: "Jordanie", kickoff_at: "2026-06-17T04:00:00Z", phase: "Groupe J" },
+  { home_team: "Argentine", away_team: "Autriche", kickoff_at: "2026-06-22T17:00:00Z", phase: "Groupe J" },
+  { home_team: "Jordanie",  away_team: "Algérie",  kickoff_at: "2026-06-23T03:00:00Z", phase: "Groupe J" },
+  { home_team: "Algérie",   away_team: "Autriche", kickoff_at: "2026-06-28T02:00:00Z", phase: "Groupe J" },
+  { home_team: "Jordanie",  away_team: "Argentine", kickoff_at: "2026-06-28T02:00:00Z", phase: "Groupe J" },
+
+  // ── GROUPE K ── Portugal · RD Congo · Ouzbékistan · Colombie ──
+  { home_team: "Portugal",    away_team: "RD Congo",    kickoff_at: "2026-06-17T17:00:00Z", phase: "Groupe K" },
+  { home_team: "Ouzbékistan", away_team: "Colombie",    kickoff_at: "2026-06-18T02:00:00Z", phase: "Groupe K" },
+  { home_team: "Portugal",    away_team: "Ouzbékistan", kickoff_at: "2026-06-23T17:00:00Z", phase: "Groupe K" },
+  { home_team: "Colombie",    away_team: "RD Congo",    kickoff_at: "2026-06-24T02:00:00Z", phase: "Groupe K" },
+  { home_team: "Colombie",    away_team: "Portugal",    kickoff_at: "2026-06-27T23:30:00Z", phase: "Groupe K" },
+  { home_team: "RD Congo",    away_team: "Ouzbékistan", kickoff_at: "2026-06-27T23:30:00Z", phase: "Groupe K" },
+
+  // ── GROUPE L ── Angleterre · Croatie · Ghana · Panama ──
+  { home_team: "Angleterre", away_team: "Croatie", kickoff_at: "2026-06-17T20:00:00Z", phase: "Groupe L" },
+  { home_team: "Ghana",      away_team: "Panama",  kickoff_at: "2026-06-17T23:00:00Z", phase: "Groupe L" },
+  { home_team: "Angleterre", away_team: "Ghana",   kickoff_at: "2026-06-23T20:00:00Z", phase: "Groupe L" },
+  { home_team: "Panama",     away_team: "Croatie", kickoff_at: "2026-06-23T23:00:00Z", phase: "Groupe L" },
+  { home_team: "Panama",     away_team: "Angleterre", kickoff_at: "2026-06-27T21:00:00Z", phase: "Groupe L" },
+  { home_team: "Croatie",    away_team: "Ghana",   kickoff_at: "2026-06-27T21:00:00Z", phase: "Groupe L" },
 ];
 
 async function seed() {
-  console.log(`Seeding ${matches.length} matches...`);
-  const { data, error } = await supabase
+  console.log("Deleting existing matches...");
+  const { error: delErr } = await supabase
     .from("matches")
-    .upsert(matches, { onConflict: "api_id" });
+    .delete()
+    .neq("id", "00000000-0000-0000-0000-000000000000");
+
+  if (delErr) {
+    console.error("Error deleting:", delErr.message);
+    process.exit(1);
+  }
+
+  console.log(`Seeding ${matches.length} matches...`);
+  const { error } = await supabase.from("matches").insert(matches);
 
   if (error) {
     console.error("Error:", error.message);
     process.exit(1);
   }
-
-  console.log("Done! Matches seeded successfully.");
+  console.log(`Done! ${matches.length} group stage matches seeded across 12 groups.`);
 }
 
 seed();

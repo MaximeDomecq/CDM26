@@ -23,17 +23,17 @@ export default async function LeaguesPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Mes ligues</h1>
+        <h1 className="text-2xl font-black text-gray-900 dark:text-white">Mes ligues</h1>
         <div className="flex gap-3">
           <Link
             href="/dashboard/leagues/join"
-            className="px-4 py-2 rounded-lg border border-brand-600 text-brand-600 text-sm font-semibold hover:bg-brand-50 transition"
+            className="px-4 py-2 rounded-xl border border-brand-500 dark:border-brand-600 text-brand-600 dark:text-brand-400 text-sm font-semibold hover:bg-brand-50 dark:hover:bg-brand-950/30 transition-all"
           >
             Rejoindre
           </Link>
           <Link
             href="/dashboard/leagues/create"
-            className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 transition"
+            className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 transition-all shadow-sm hover:shadow active:scale-95"
           >
             Créer une ligue
           </Link>
@@ -41,9 +41,9 @@ export default async function LeaguesPage() {
       </div>
 
       {leagues.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-gray-400 dark:text-gray-600">
           <div className="text-5xl mb-3">🏆</div>
-          <p>Vous n&apos;avez pas encore de ligue.</p>
+          <p className="font-semibold">Vous n&apos;avez pas encore de ligue.</p>
           <p className="text-sm mt-1">Créez-en une ou rejoignez celle d&apos;un ami !</p>
         </div>
       )}
@@ -53,21 +53,24 @@ export default async function LeaguesPage() {
           <Link
             key={league!.id}
             href={`/dashboard/leagues/${league!.id}`}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition group"
+            className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-5 hover:shadow-card-hover hover:border-brand-200 dark:hover:border-brand-800 transition-all hover:scale-[1.01] active:scale-[0.99]"
           >
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-lg group-hover:text-brand-600 transition">
+                <h2 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                   {league!.name}
                 </h2>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Code : <span className="font-mono font-bold text-gray-600">{league!.invite_code}</span>
+                <p className="text-xs text-gray-400 dark:text-gray-600 mt-0.5">
+                  Code :{" "}
+                  <code className="font-mono font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+                    {league!.invite_code}
+                  </code>
                   {league!.created_by === user!.id && (
-                    <span className="ml-2 text-brand-500">· Admin</span>
+                    <span className="ml-2 text-brand-500 dark:text-brand-400">· Admin</span>
                   )}
                 </p>
               </div>
-              <span className="text-gray-300 group-hover:text-brand-400 transition text-xl">→</span>
+              <span className="text-gray-300 dark:text-gray-600 group-hover:text-brand-400 transition-colors text-xl">→</span>
             </div>
           </Link>
         ))}
