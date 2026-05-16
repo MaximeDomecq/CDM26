@@ -81,7 +81,7 @@ export default function LandingPage() {
           <Link href="/auth/register"
             className="text-sm font-black px-4 py-2 rounded-xl transition-all hover:scale-105 active:scale-95"
             style={{ background: "linear-gradient(135deg, #f59e0b 0%, #fcd34d 50%, #d97706 100%)", color: "#080e1a" }}>
-            Jouer gratuitement
+            Rejoindre
           </Link>
         </div>
       </nav>
@@ -131,7 +131,7 @@ export default function LandingPage() {
               color: "#080e1a",
               boxShadow: "0 0 40px rgba(245,158,11,0.4)",
             }}>
-            Créer mon compte — c&apos;est gratuit
+            Créer mon compte
           </Link>
           <Link href="/auth/login"
             className="px-8 py-4 rounded-2xl font-semibold text-base border transition-all hover:bg-white/5"
@@ -198,7 +198,7 @@ export default function LandingPage() {
           </div>
           <div className="grid sm:grid-cols-3 gap-6">
             {[
-              { step: "1", icon: "📝", title: "Crée ton compte", desc: "Inscription gratuite. Aucune carte bancaire." },
+              { step: "1", icon: "📝", title: "Crée ton compte", desc: "Choisis ton pseudo et c'est parti." },
               { step: "2", icon: "🤝", title: "Rejoins une ligue", desc: "Crée ta ligue ou rejoint celle d'un ami avec son code." },
               { step: "3", icon: "⚽", title: "Pronostique !", desc: "Saisie tes scores avant chaque coup d'envoi et accumule les points." },
             ].map(({ step, icon, title, desc }) => (
@@ -275,7 +275,7 @@ export default function LandingPage() {
             Le tournoi commence le{" "}
             <span style={{ color: "#f59e0b" }}>11 juin 2026</span>
           </h2>
-          <p className="text-white/50 mb-10 text-lg">Ne rate pas le coup d&apos;envoi. Inscris-toi maintenant et prépare tes pronostics.</p>
+          <p className="text-white/50 mb-10 text-lg">Le coup d&apos;envoi approche — prépare tes pronostics !</p>
           <Link
             href="/auth/register"
             className="inline-block px-10 py-5 rounded-2xl font-black text-xl transition-all hover:scale-105 active:scale-95"
@@ -284,15 +284,14 @@ export default function LandingPage() {
               color: "#080e1a",
               boxShadow: "0 0 60px rgba(245,158,11,0.35)",
             }}>
-            Rejoindre la compétition →
+            On joue →
           </Link>
-          <p className="text-white/25 text-sm mt-5">100% gratuit · Aucune publicité · Juste toi et tes amis</p>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
       <footer className="py-8 px-4 border-t text-center text-white/25 text-xs" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-        CDM 2026 · Fait avec ❤️ pour la famille et les amis · Pas affilié à la FIFA
+        CDM 2026 · Fait avec ❤️ pour la famille et les amis
       </footer>
     </main>
   );
