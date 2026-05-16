@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { format, isToday, isTomorrow, differenceInHours, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import MatchCard from "./MatchCard";
@@ -41,7 +41,7 @@ export default function MatchesClient({ matches, predictions, userId, favoriteTe
     [predictions]
   );
 
-  const now = new Date();
+  const now = useRef(new Date()).current;
 
   const upcoming24h = useMemo(
     () => matches.filter((m) => {
@@ -49,7 +49,7 @@ export default function MatchesClient({ matches, predictions, userId, favoriteTe
       const diff = differenceInHours(kickoff, now);
       return diff >= 0 && diff <= 24;
     }),
-    [matches]
+    [matches, now]
   );
 
   const todayMatches = useMemo(() => matches.filter((m) => isToday(parseISO(m.kickoff_at))), [matches]);
