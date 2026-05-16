@@ -32,7 +32,7 @@ export default async function TableauPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-black text-gray-900 dark:text-white">Tableau de la compétition</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-          32 équipes qualifiées · Huitièmes · Quarts · Demi-finales · Finale
+          32 équipes qualifiées · Seizièmes · Huitièmes · Quarts · Demi-finales · Finale
         </p>
       </div>
 
