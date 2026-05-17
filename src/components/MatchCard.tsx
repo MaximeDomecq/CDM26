@@ -41,14 +41,14 @@ const TIER_CONFIG = {
 };
 
 export default function MatchCard({ match, prediction, locked, userId }: Props) {
-  const [home, setHome] = useState("");
-  const [away, setAway] = useState("");
+  const [home, setHome] = useState(prediction?.home_score?.toString() ?? "");
+  const [away, setAway] = useState(prediction?.away_score?.toString() ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const hasResult = match.home_score !== null && match.away_score !== null;
   const hasPrediction = prediction !== null;
-  const canPredict = !hasPrediction && !locked;
+  const canEdit = !locked; // can edit/create prediction any time before kickoff
 
   const tier = hasResult && hasPrediction
     ? getTier(
@@ -99,7 +99,7 @@ export default function MatchCard({ match, prediction, locked, userId }: Props) 
           <span>·</span>
           <span className="font-mono">{format(cestTime, "HH:mm")} CEST</span>
         </div>
-        {canPredict && (
+        {canEdit && !hasPrediction && (
           <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full whitespace-nowrap">
             À pronostiquer
           </span>
@@ -170,21 +170,8 @@ export default function MatchCard({ match, prediction, locked, userId }: Props) 
             </div>
           )}
 
-          {/* Has prediction, no result yet */}
-          {hasPrediction && !hasResult && (
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Ton prono :</span>
-              <span className="font-black text-brand-600 dark:text-brand-400 tabular-nums text-base">
-                {prediction.home_score} – {prediction.away_score}
-              </span>
-              <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
-                En attente
-              </span>
-            </div>
-          )}
-
-          {/* No prediction, not locked → input form */}
-          {canPredict && !saved && (
+          {/* Not locked → always show editable input (pre-filled if prediction exists) */}
+          {canEdit && !saved && (
             <div className="flex items-center justify-center gap-2">
               <input
                 type="number" min={0} max={20} value={home}
@@ -204,24 +191,37 @@ export default function MatchCard({ match, prediction, locked, userId }: Props) 
                 disabled={saving || home === "" || away === ""}
                 className="px-4 py-2 rounded-xl text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white transition-all active:scale-95 disabled:opacity-40"
               >
-                {saving ? "…" : "Valider"}
+                {saving ? "…" : hasPrediction ? "Modifier" : "Valider"}
               </button>
             </div>
           )}
 
-          {/* Just saved — show confirmation */}
-          {canPredict && saved && (
+          {/* Just saved confirmation */}
+          {canEdit && saved && (
             <div className="flex items-center justify-center gap-2">
               <span className="text-emerald-600 dark:text-emerald-400 font-black text-base tabular-nums">
                 {home} – {away}
               </span>
               <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">
-                ✓ Pronostic enregistré
+                ✓ Enregistré
               </span>
             </div>
           )}
 
-          {/* Locked, no prediction */}
+          {/* Locked, has prediction, waiting for result */}
+          {locked && hasPrediction && !hasResult && (
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">Ton prono :</span>
+              <span className="font-black text-brand-600 dark:text-brand-400 tabular-nums text-base">
+                {prediction!.home_score} – {prediction!.away_score}
+              </span>
+              <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                En attente
+              </span>
+            </div>
+          )}
+
+          {/* Locked, no prediction, no result */}
           {locked && !hasPrediction && !hasResult && (
             <p className="text-center text-xs text-gray-400 dark:text-gray-600 italic">
               Pas de pronostic pour ce match.
