@@ -123,27 +123,28 @@ export default function KnockoutBracket({ knockoutMatches, pctComplete }: Props)
         </div>
       )}
 
-      {/* 3rd place match */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card overflow-hidden">
-        <div className="bg-gray-100 dark:bg-gray-800 px-5 py-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span>🥉</span>
-            <span className="font-bold text-sm text-gray-700 dark:text-gray-300">Match pour la 3e place</span>
-          </div>
-          <span className="text-xs text-gray-400 dark:text-gray-500">18 juillet 2026</span>
-        </div>
-        <div className="px-5 py-4">
-          <MatchSlot match={matchesByPhase["3e place"]?.[0]} />
-        </div>
-      </div>
-
       {/* Knockout rounds */}
       {ROUNDS.map((round) => {
         const matches = matchesByPhase[round.phase] ?? [];
         const emptyCount = Math.max(0, round.matchCount - matches.length);
 
         return (
-          <div key={round.phase} className={`rounded-2xl border overflow-hidden shadow-card ${ROUND_COLORS[round.color]}`}>
+          <div key={round.phase}>
+          {round.phase === "Finale" && (
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card overflow-hidden mb-5">
+              <div className="bg-gray-100 dark:bg-gray-800 px-5 py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span>🥉</span>
+                  <span className="font-bold text-sm text-gray-700 dark:text-gray-300">Match pour la 3e place</span>
+                </div>
+                <span className="text-xs text-gray-400 dark:text-gray-500">18 juillet 2026</span>
+              </div>
+              <div className="px-5 py-4">
+                <MatchSlot match={matchesByPhase["3e place"]?.[0]} />
+              </div>
+            </div>
+          )}
+          <div className={`rounded-2xl border overflow-hidden shadow-card ${ROUND_COLORS[round.color]}`}>
             {/* Header */}
             <div className={`px-5 py-3 flex items-center justify-between ${HEADER_COLORS[round.color]}`}>
               <div className="flex items-center gap-2.5">
@@ -186,6 +187,7 @@ export default function KnockoutBracket({ knockoutMatches, pctComplete }: Props)
                 </span>
               </div>
             )}
+          </div>
           </div>
         );
       })}
