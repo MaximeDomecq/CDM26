@@ -86,7 +86,7 @@ export default function MatchCard({ match, prediction, locked, userId }: Props) 
       tier === "wrong"   ? "border-gray-100 dark:border-gray-800" :
       tier              ? "border-brand-100 dark:border-brand-900/60" :
       hasPrediction      ? "border-brand-100 dark:border-brand-900/60" :
-      canPredict         ? "border-amber-200 dark:border-amber-800/40" :
+      canEdit            ? "border-amber-200 dark:border-amber-800/40" :
                           "border-gray-100 dark:border-gray-800"
     )}>
 
