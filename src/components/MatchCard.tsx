@@ -104,9 +104,9 @@ export default function MatchCard({ match, prediction, locked, userId }: Props) 
             À pronostiquer
           </span>
         )}
-        {locked && !hasPrediction && !hasResult && (
+        {locked && !hasPrediction && (
           <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
-            Verrouillé
+            Terminé
           </span>
         )}
       </div>
