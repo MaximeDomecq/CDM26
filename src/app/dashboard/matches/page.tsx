@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import MatchesTabWrapper from "@/components/MatchesTabWrapper";
 
-export const revalidate = 60;
+export const revalidate = 0;
 
 export default async function MatchesPage() {
   const supabase = await createClient();

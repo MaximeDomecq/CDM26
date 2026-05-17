@@ -5,7 +5,7 @@ import type { MatchBreakdownItem } from "@/components/LeagueMatchBreakdown";
 import LeagueMatchBreakdown from "@/components/LeagueMatchBreakdown";
 import LeagueChat from "@/components/LeagueChat";
 
-export const revalidate = 30;
+export const revalidate = 0;
 
 export default async function LeagueDetailPage({
   params,
@@ -43,14 +43,18 @@ export default async function LeagueDetailPage({
 
   const now = new Date();
 
-  // All matches that have kicked off (locked — predictions visible)
-  const { data: lockedMatches } = await supabase
+  // Fetch all matches once, filter locally:
+  // locked = kickoff has passed OR a score has already been set (simulation / real result)
+  const { data: allMatches } = await supabase
     .from("matches")
     .select("id, home_team, away_team, kickoff_at, phase, home_score, away_score")
-    .lte("kickoff_at", now.toISOString())
     .order("kickoff_at", { ascending: false });
 
-  const lockedMatchIds = (lockedMatches ?? []).map((m) => m.id);
+  const lockedMatches = (allMatches ?? []).filter(
+    (m) => new Date(m.kickoff_at) <= now || m.home_score !== null
+  );
+
+  const lockedMatchIds = lockedMatches.map((m) => m.id);
 
   // All predictions from league members for locked matches
   const { data: allPredictions } = await supabase
@@ -59,10 +63,10 @@ export default async function LeagueDetailPage({
     .in("user_id", memberIds.length > 0 ? memberIds : ["none"])
     .in("match_id", lockedMatchIds.length > 0 ? lockedMatchIds : ["none"]);
 
-  const matchMap = new Map((lockedMatches ?? []).map((m) => [m.id, m]));
+  const matchMap = new Map(lockedMatches.map((m) => [m.id, m]));
 
   // Finished matches only (for leaderboard points)
-  const finishedMatches = (lockedMatches ?? []).filter((m) => m.home_score !== null);
+  const finishedMatches = lockedMatches.filter((m) => m.home_score !== null);
   const finishedMatchIds = new Set(finishedMatches.map((m) => m.id));
 
   // Unique exact predictors per match (for bonus point)
@@ -103,7 +107,7 @@ export default async function LeagueDetailPage({
   leaderboard.sort((a, b) => b.points - a.points);
 
   // Match breakdown — all locked matches, each member's prediction + points
-  const breakdown: MatchBreakdownItem[] = (lockedMatches ?? []).map((match) => {
+  const breakdown: MatchBreakdownItem[] = lockedMatches.map((match) => {
     const isFinished = match.home_score !== null;
     const exactList = exactPredictors.get(match.id) ?? [];
 
