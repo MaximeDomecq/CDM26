@@ -1,70 +1,60 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { joinLeagueAction } from "./action";
 
 export default function JoinLeaguePage() {
-  const router = useRouter();
-  const [code, setCode] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: league } = await supabase
-      .from("leagues")
-      .select("id")
-      .eq("invite_code", code.trim().toUpperCase())
-      .single();
-
-    if (!league) {
-      setError("Code invalide. Vérifiez le code et réessayez.");
+    const formData = new FormData(e.currentTarget);
+    const result = await joinLeagueAction(formData);
+    if (result?.error) {
+      setError(result.error);
       setLoading(false);
-      return;
     }
-
-    const { error: memberError } = await supabase
-      .from("league_members")
-      .insert({ league_id: league.id, user_id: user.id });
-
-    if (memberError) {
-      setError("Vous êtes peut-être déjà membre de cette ligue.");
-      setLoading(false);
-      return;
-    }
-
-    router.push(`/dashboard/leagues/${league.id}`);
   }
 
   return (
     <div className="max-w-md">
-      <h1 className="text-2xl font-bold mb-6">Rejoindre une ligue</h1>
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow p-6 flex flex-col gap-4">
+      <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-1">Rejoindre une ligue</h1>
+      <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+        Entrez le code partagé par l&apos;admin de la ligue.
+      </p>
+
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-6 flex flex-col gap-4"
+      >
         <div>
-          <label className="block text-sm font-medium mb-1">Code d&apos;invitation</label>
+          <label className="block text-sm font-semibold mb-1.5 text-gray-700 dark:text-gray-300">
+            Code d&apos;invitation
+          </label>
           <input
+            name="code"
             type="text"
             required
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="Ex: AB12CD"
-            className="w-full border rounded-lg px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-brand-500"
+            placeholder="Ex : AB12CD"
+            className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm font-mono uppercase tracking-widest bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
-        {error && <p className="text-sm text-red-500">{error}</p>}
+
+        {error && (
+          <div className="rounded-xl px-4 py-2.5 text-sm font-medium bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400">
+            {error}
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-brand-600 text-white py-2 rounded-lg font-semibold hover:bg-brand-700 transition disabled:opacity-50"
+          className="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-black transition-all active:scale-95 disabled:opacity-50"
         >
-          {loading ? "Recherche…" : "Rejoindre"}
+          {loading ? "Recherche…" : "Rejoindre la ligue"}
         </button>
       </form>
     </div>
