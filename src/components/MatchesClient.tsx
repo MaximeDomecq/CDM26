@@ -91,7 +91,7 @@ export default function MatchesClient({ matches, predictions, userId, favoriteTe
             key={m.id}
             match={m}
             prediction={predictionMap.get(m.id) ?? null}
-            locked={m.home_score !== null}
+            locked={parseISO(m.kickoff_at) <= now || m.home_score !== null}
             userId={userId}
           />
         ))}
