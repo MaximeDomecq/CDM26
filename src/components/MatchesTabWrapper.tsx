@@ -42,10 +42,8 @@ interface Props {
   calendarMatches: CalendarMatch[];
 }
 
-const CEST = 2 * 3600 * 1000;
-
 function cestDate(utcIso: string) {
-  return new Date(parseISO(utcIso).getTime() + CEST);
+  return parseISO(utcIso);
 }
 
 function channels(homeTeam: string, awayTeam: string): string[] {

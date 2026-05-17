@@ -63,7 +63,7 @@ export default function LeagueMatchBreakdown({ breakdown }: Props) {
     <div className="flex flex-col gap-3">
       {breakdown.map((item) => {
         const isOpen = openId === item.matchId;
-        const cestTime = new Date(parseISO(item.kickoffAt).getTime() + 2 * 3600 * 1000);
+        const cestTime = parseISO(item.kickoffAt);
         const isFinished = item.homeScore !== null;
         const predictedCount = item.entries.filter((e) => e.prediction !== null).length;
 

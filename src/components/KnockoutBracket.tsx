@@ -221,7 +221,7 @@ function MatchSlot({ match }: { match?: KnockoutMatch }) {
 }
 
 function MatchRow({ match }: { match: KnockoutMatch }) {
-  const cestTime = new Date(parseISO(match.kickoff_at).getTime() + 2 * 3600 * 1000);
+  const cestTime = parseISO(match.kickoff_at);
   const hasResult = match.home_score !== null;
 
   return (

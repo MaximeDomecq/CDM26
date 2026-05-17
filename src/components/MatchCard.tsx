@@ -70,9 +70,7 @@ export default function MatchCard({ match, prediction, locked, userId }: Props) 
     setTimeout(() => setSaved(false), 2000);
   }
 
-  const kickoff = parseISO(match.kickoff_at);
-  const cestOffset = 2 * 3600 * 1000;
-  const cestTime = new Date(kickoff.getTime() + cestOffset);
+  const cestTime = parseISO(match.kickoff_at);
 
   return (
     <div className={clsx(
