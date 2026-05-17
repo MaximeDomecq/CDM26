@@ -4,7 +4,6 @@ import { calculatePoints, getTier } from "@/lib/scoring";
 import type { MatchBreakdownItem } from "@/components/LeagueMatchBreakdown";
 import LeagueMatchBreakdown from "@/components/LeagueMatchBreakdown";
 import LeagueChat from "@/components/LeagueChat";
-import { parseISO } from "date-fns";
 
 export const revalidate = 30;
 

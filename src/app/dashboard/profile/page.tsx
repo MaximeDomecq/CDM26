@@ -51,7 +51,6 @@ interface Profile {
 
 export default function ProfilePage() {
   const router = useRouter();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const supabase = useMemo(() => createClient(), []);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
@@ -71,7 +70,7 @@ export default function ProfilePage() {
       if (pl) setPlayers(pl as Player[]);
     }
     load();
-  }, []);
+  }, [supabase]);
 
   async function save() {
     setSaving(true);
