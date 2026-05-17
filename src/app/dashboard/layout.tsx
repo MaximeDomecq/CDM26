@@ -43,9 +43,7 @@ export default async function DashboardLayout({
           {/* Nav */}
           <nav className="flex items-center gap-0.5 text-sm font-medium overflow-x-auto">
             <NavLink href="/dashboard/matches">⚽ Matchs</NavLink>
-            <NavLink href="/dashboard/calendrier">📅 Calendrier</NavLink>
-            <NavLink href="/dashboard/groupes">📊 Groupes</NavLink>
-            <NavLink href="/dashboard/tableau">🗂 Tableau</NavLink>
+            <NavLink href="/dashboard/groupes">📊 Compétition</NavLink>
             <NavLink href="/dashboard/leagues">🏆 Ligues</NavLink>
             <div className="w-px h-5 bg-white/20 mx-1 flex-shrink-0" />
             <Link

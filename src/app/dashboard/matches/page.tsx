@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import MatchesClient from "@/components/MatchesClient";
+import MatchesTabWrapper from "@/components/MatchesTabWrapper";
 
 export const revalidate = 60;
 
@@ -14,12 +14,13 @@ export default async function MatchesPage() {
   ]);
 
   return (
-    <MatchesClient
+    <MatchesTabWrapper
       matches={matches ?? []}
       predictions={predictions ?? []}
       userId={user!.id}
       favoriteTeam={profile?.favorite_team ?? null}
       favoriteTeamFlag={profile?.favorite_team_flag ?? null}
+      calendarMatches={matches ?? []}
     />
   );
 }
