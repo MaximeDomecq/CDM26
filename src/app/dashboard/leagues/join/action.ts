@@ -2,6 +2,7 @@
 
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { notifyLeagueJoin } from "@/app/actions/push";
 
 export async function joinLeagueAction(
   formData: FormData
@@ -41,6 +42,9 @@ export async function joinLeagueAction(
       .insert({ league_id: league.id, user_id: user.id });
 
     if (insertErr) return { error: `Erreur d'inscription : ${insertErr.message}` };
+
+    // Notify existing members (fire-and-forget)
+    notifyLeagueJoin(league.id, user.id).catch(() => {});
   }
 
   return { leagueId: league.id };

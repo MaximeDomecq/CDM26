@@ -17,11 +17,13 @@
     "clsx": "^2",
     "date-fns": "^3",
     "next": "^14.2.29",
+    "web-push": "^3.6.7",
     "react": "^18",
     "react-dom": "^18"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/web-push": "^3.6.4",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10",

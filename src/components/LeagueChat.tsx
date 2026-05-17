@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { notifyLeagueChatMessage } from "@/app/actions/push";
 
 interface Message {
   id: string;
@@ -73,6 +74,8 @@ export default function LeagueChat({ leagueId, currentUserId, currentDisplayName
     });
     setInput("");
     setSending(false);
+    // Notify other members (fire-and-forget)
+    notifyLeagueChatMessage(leagueId, currentUserId, currentDisplayName, text).catch(() => {});
   }
 
   if (unavailable) {

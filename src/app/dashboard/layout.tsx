@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import NotificationButton from "@/components/NotificationButton";
 
 export default async function DashboardLayout({
   children,
@@ -55,6 +56,7 @@ export default async function DashboardLayout({
               )}
               <span className="max-w-[80px] truncate text-xs text-gold-300 font-semibold hidden md:block">{displayName}</span>
             </Link>
+            <NotificationButton />
             <ThemeToggle />
             <form action="/auth/signout" method="post">
               <button className="px-2 py-1.5 rounded-lg text-white/50 hover:text-white/80 hover:bg-white/10 transition-all text-xs flex-shrink-0">
