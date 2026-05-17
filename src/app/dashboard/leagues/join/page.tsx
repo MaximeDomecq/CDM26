@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { joinLeagueAction } from "./action";
 
 export default function JoinLeaguePage() {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -13,9 +15,11 @@ export default function JoinLeaguePage() {
     setError(null);
     const formData = new FormData(e.currentTarget);
     const result = await joinLeagueAction(formData);
-    if (result?.error) {
+    if ("error" in result) {
       setError(result.error);
       setLoading(false);
+    } else {
+      router.push(`/dashboard/leagues/${result.leagueId}`);
     }
   }
 

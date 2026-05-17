@@ -2,11 +2,10 @@
 
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 
 export async function joinLeagueAction(
   formData: FormData
-): Promise<{ error: string } | never> {
+): Promise<{ error: string } | { leagueId: string }> {
   const code = ((formData.get("code") as string) ?? "").trim().toUpperCase();
   if (!code) return { error: "Entrez un code." };
 
@@ -14,22 +13,21 @@ export async function joinLeagueAction(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Non connecté." };
 
-  // Service client bypasses RLS so we can look up leagues by invite_code
-  // even when the user isn't yet a member
-  const service = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY;
+  if (!url || !key) return { error: "Configuration serveur manquante." };
 
-  const { data: league } = await service
+  const service = createServiceClient(url, key);
+
+  const { data: league, error: leagueErr } = await service
     .from("leagues")
     .select("id")
     .eq("invite_code", code)
     .single();
 
-  if (!league) return { error: "Code invalide. Vérifiez le code et réessayez." };
+  if (leagueErr || !league) return { error: "Code invalide. Vérifiez le code et réessayez." };
 
-  // Already a member? Just redirect
+  // Already a member — just return the id
   const { data: existing } = await service
     .from("league_members")
     .select("user_id")
@@ -38,10 +36,12 @@ export async function joinLeagueAction(
     .single();
 
   if (!existing) {
-    await service
+    const { error: insertErr } = await service
       .from("league_members")
       .insert({ league_id: league.id, user_id: user.id });
+
+    if (insertErr) return { error: `Erreur d'inscription : ${insertErr.message}` };
   }
 
-  redirect(`/dashboard/leagues/${league.id}`);
+  return { leagueId: league.id };
 }
