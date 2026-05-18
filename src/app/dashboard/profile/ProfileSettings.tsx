@@ -124,10 +124,8 @@ export default function ProfileSettings({
           {/* Dark mode */}
           <button onClick={toggleTheme} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
             <div className="flex items-center gap-3">
-              <span className="text-xl">{theme === "dark" ? "☀️" : "🌙"}</span>
-              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                {theme === "dark" ? "Mode clair" : "Mode sombre"}
-              </span>
+              <span className="text-xl">🌙</span>
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Mode sombre</span>
             </div>
             <Toggle active={theme === "dark"} />
           </button>
