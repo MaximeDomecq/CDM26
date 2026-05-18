@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useTheme } from "@/components/ThemeProvider";
 
 const TEAMS = [
   // UEFA (16)
@@ -61,6 +62,49 @@ export default function ProfilePage() {
   const [search, setSearch] = useState("");
 
   const locked = new Date() >= WC_START;
+  const { theme, toggle: toggleTheme } = useTheme();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Notifications
+  type NotifState = "unsupported" | "loading" | "subscribed" | "unsubscribed" | "denied";
+  const [notifState, setNotifState] = useState<NotifState>("loading");
+  const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setNotifState("unsupported"); return;
+    }
+    if (Notification.permission === "denied") { setNotifState("denied"); return; }
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.pushManager.getSubscription().then((sub) => {
+        if (sub) { setSubscription(sub); setNotifState("subscribed"); }
+        else setNotifState("unsubscribed");
+      });
+    });
+  }, []);
+
+  async function toggleNotif() {
+    if (notifState === "subscribed" && subscription) {
+      setNotifState("loading");
+      try {
+        await fetch("/api/subscribe", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: subscription.endpoint }) });
+        await subscription.unsubscribe();
+        setSubscription(null); setNotifState("unsubscribed");
+      } catch { setNotifState("subscribed"); }
+    } else if (notifState === "unsubscribed") {
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) return;
+      setNotifState("loading");
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") { setNotifState("denied"); return; }
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey });
+        await fetch("/api/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subscription: sub }) });
+        setSubscription(sub); setNotifState("subscribed");
+      } catch { setNotifState("unsubscribed"); }
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -211,6 +255,56 @@ export default function ProfilePage() {
           {saved ? "✓ Enregistré !" : saving ? "Enregistrement…" : "Sauvegarder le profil"}
         </button>
       )}
+
+      {/* Preferences */}
+      <Section title="⚙️ Préférences" className="mt-5 mb-5">
+        {/* Theme */}
+        <button
+          onClick={toggleTheme}
+          className="w-full flex items-center justify-between py-2 group"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xl">{theme === "dark" ? "☀️" : "🌙"}</span>
+            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+              {theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre"}
+            </span>
+          </div>
+          <div className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${theme === "dark" ? "bg-brand-500" : "bg-gray-200 dark:bg-gray-700"}`}>
+            <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${theme === "dark" ? "translate-x-5" : "translate-x-0"}`} />
+          </div>
+        </button>
+
+        {notifState !== "unsupported" && (
+          <button
+            onClick={toggleNotif}
+            disabled={notifState === "loading" || notifState === "denied"}
+            className="w-full flex items-center justify-between py-2 mt-1 disabled:opacity-50"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">{notifState === "subscribed" ? "🔔" : "🔕"}</span>
+              <div>
+                <div className="text-sm font-medium text-gray-800 dark:text-gray-200 text-left">Notifications</div>
+                {notifState === "denied" && (
+                  <div className="text-xs text-red-500 text-left">Bloquées dans les paramètres du navigateur</div>
+                )}
+              </div>
+            </div>
+            <div className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${notifState === "subscribed" ? "bg-brand-500" : "bg-gray-200 dark:bg-gray-700"}`}>
+              <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${notifState === "subscribed" ? "translate-x-5" : "translate-x-0"}`} />
+            </div>
+          </button>
+        )}
+      </Section>
+
+      {/* Sign out */}
+      <form ref={formRef} action="/auth/signout" method="post">
+        <button
+          type="submit"
+          className="w-full py-3 rounded-2xl font-bold text-sm text-red-500 dark:text-red-400 border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+        >
+          🚪 Déconnexion
+        </button>
+      </form>
     </div>
   );
 }

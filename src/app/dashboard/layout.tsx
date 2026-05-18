@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import ProfileDropdown from "@/components/ProfileDropdown";
 
 export default async function DashboardLayout({
   children,
@@ -21,17 +20,9 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("favorite_team, favorite_team_flag, predicted_winner, predicted_winner_flag, predicted_top_scorer_id")
+    .select("favorite_team, favorite_team_flag")
     .eq("id", user.id)
     .single();
-
-  let topScorerName: string | null = null;
-  let topScorerFlag: string | null = null;
-  const topScorerId = (profile as { predicted_top_scorer_id?: string | null } | null)?.predicted_top_scorer_id;
-  if (topScorerId) {
-    const { data: player } = await supabase.from("players").select("name, team_flag").eq("id", topScorerId).single();
-    if (player) { topScorerName = player.name; topScorerFlag = player.team_flag; }
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
@@ -54,15 +45,19 @@ export default async function DashboardLayout({
             <NavLink href="/dashboard/groupes">📊 Compétition</NavLink>
             <NavLink href="/dashboard/leagues">🏆 Ligues</NavLink>
             <div className="w-px h-5 bg-white/20 mx-1 flex-shrink-0" />
-            <ProfileDropdown
-              displayName={displayName}
-              favoriteTeamFlag={profile?.favorite_team_flag ?? null}
-              favoriteTeam={profile?.favorite_team ?? null}
-              predictedWinnerFlag={(profile as { predicted_winner_flag?: string | null } | null)?.predicted_winner_flag ?? null}
-              predictedWinner={(profile as { predicted_winner?: string | null } | null)?.predicted_winner ?? null}
-              topScorerName={topScorerName}
-              topScorerFlag={topScorerFlag}
-            />
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-all flex-shrink-0"
+            >
+              {profile?.favorite_team_flag ? (
+                <span className="text-base">{profile.favorite_team_flag}</span>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              )}
+              <span className="hidden md:block text-xs text-gold-300 font-semibold max-w-[80px] truncate">{displayName}</span>
+            </Link>
           </nav>
         </div>
       </header>
