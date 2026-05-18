@@ -64,11 +64,8 @@ const TEAM_MAP: Record<string, string> = {
 };
 
 function normalizeName(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Mn}/gu, "")
-    .trim();
+  // Remove diacritics (combining marks U+0300–U+036F) after NFD decomposition
+  return name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 }
 
 export async function GET(req: NextRequest) {
