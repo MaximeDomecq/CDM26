@@ -13,6 +13,7 @@ export interface PredictionEntry {
   points: number | null;
   tier: ScoreTier | null;
   isMe: boolean;
+  isUniqueExact?: boolean;
 }
 
 export interface MatchBreakdownItem {
@@ -139,6 +140,11 @@ export default function LeagueMatchBreakdown({ breakdown }: Props) {
                           {entry.tier && (
                             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${TIER_STYLE[entry.tier]}`}>
                               {TIER_LABEL[entry.tier]}
+                            </span>
+                          )}
+                          {entry.isUniqueExact && (
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400">
+                              ⭐ +1 seul exact
                             </span>
                           )}
                           {entry.points !== null && (

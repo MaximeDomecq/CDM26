@@ -117,8 +117,8 @@ export default async function LeagueDetailPage({
       );
       let points: number | null = null;
       let tier = null;
+      const uniqueExact = exactList.length === 1 && exactList[0] === member.userId;
       if (pred && isFinished) {
-        const uniqueExact = exactList.length === 1 && exactList[0] === member.userId;
         points = calculatePoints(
           { home_score: pred.home_score, away_score: pred.away_score },
           { home_score: match.home_score!, away_score: match.away_score! },
@@ -136,6 +136,7 @@ export default async function LeagueDetailPage({
         points,
         tier,
         isMe: member.userId === user!.id,
+        isUniqueExact: isFinished && !!pred && uniqueExact,
       };
     });
 
@@ -265,10 +266,11 @@ export default async function LeagueDetailPage({
             <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Par match</h4>
             <div className="space-y-2">
               {[
-                { pts: "5 pts", label: "Score exact", sub: "+1 bonus si seul de la ligue", color: "emerald" },
-                { pts: "3 pts", label: "Bonne différence de buts", sub: "Ex : 2-0 pronostiqué, 3-1 réel", color: "blue" },
-                { pts: "2 pts", label: "Bon résultat", sub: "Victoire ou nul correct", color: "sky" },
-                { pts: "1 pt",  label: "Total de buts correct", sub: "Même nombre de buts total", color: "amber" },
+                { pts: "5 pts", label: "Score exact", sub: "", color: "emerald" },
+                { pts: "+1",   label: "Bonus score unique", sub: "Si tu es le seul de la ligue à avoir le bon score", color: "emerald" },
+                { pts: "3 pts", label: "Bonne différence de buts", sub: "Ex : prono 2-0, résultat 3-1", color: "blue" },
+                { pts: "2 pts", label: "Bon résultat", sub: "Victoire ou match nul correct", color: "sky" },
+                { pts: "1 pt",  label: "Bon nombre de buts", sub: "Le total de buts des deux équipes est correct", color: "amber" },
                 { pts: "0 pt",  label: "Mauvais pronostic", sub: "", color: "gray" },
               ].map(({ pts, label, sub, color }) => (
                 <div key={pts} className="flex items-start gap-3">

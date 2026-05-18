@@ -4,7 +4,7 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { flag } from "@/lib/teams";
 
-export const revalidate = 60;
+export const revalidate = 0;
 
 const WC_START = new Date("2026-06-11T19:00:00Z");
 const WC_END = new Date("2026-07-19T20:00:00Z");
@@ -22,13 +22,20 @@ export default async function DashboardPage() {
   const [{ data: matches }, { data: predictions }, { data: profile }] = await Promise.all([
     supabase.from("matches").select("id, kickoff_at, home_team, away_team, phase, home_score, away_score").order("kickoff_at"),
     supabase.from("predictions").select("match_id").eq("user_id", user!.id),
-    supabase.from("profiles").select("favorite_team, favorite_team_flag, predicted_winner, predicted_winner_flag").eq("id", user!.id).single(),
+    supabase.from("profiles").select("favorite_team, favorite_team_flag, predicted_winner, predicted_winner_flag, predicted_top_scorer_id").eq("id", user!.id).single(),
   ]);
 
   const predictionSet = new Set((predictions ?? []).map((p) => p.match_id));
   const totalMatches = matches?.length ?? 0;
   const predictedCount = (matches ?? []).filter((m) => predictionSet.has(m.id)).length;
   const completionPct = totalMatches > 0 ? Math.round((predictedCount / totalMatches) * 100) : 0;
+
+  const topScorerId = (profile as { predicted_top_scorer_id?: string | null } | null)?.predicted_top_scorer_id ?? null;
+  let topScorer: { name: string; team: string } | null = null;
+  if (topScorerId) {
+    const { data: player } = await supabase.from("players").select("name, team").eq("id", topScorerId).single();
+    if (player) topScorer = player;
+  }
 
   const upcomingMatches = (matches ?? [])
     .filter((m) => parseISO(m.kickoff_at) > now)
@@ -101,12 +108,19 @@ export default async function DashboardPage() {
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3">
-        <StatCard
-          label="Pronostics"
-          value={`${predictedCount}/${totalMatches}`}
-          sub={`${completionPct}% complété`}
-          color="blue"
-        />
+        {topScorer ? (
+          <div className="rounded-2xl border bg-gradient-to-br from-brand-500/10 to-brand-600/5 border-brand-100 p-4">
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Meilleur buteur</div>
+            <div className="text-lg font-black text-gray-800 leading-tight">{topScorer.name}</div>
+            <div className="text-xs text-gray-500 mt-1 truncate">{topScorer.team}</div>
+          </div>
+        ) : (
+          <Link href="/dashboard/profile" className="rounded-2xl border bg-gradient-to-br from-amber-400/10 to-amber-500/5 border-amber-200 p-4 hover:border-amber-300 transition-colors">
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Meilleur buteur</div>
+            <div className="text-base font-black text-amber-600 leading-tight">—</div>
+            <div className="text-xs text-amber-500 mt-1 leading-tight">Complète ton profil ↗</div>
+          </Link>
+        )}
         <StatCard
           label="Vainqueur prédit"
           value={profile?.predicted_winner_flag ?? "—"}

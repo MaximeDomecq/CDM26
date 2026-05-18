@@ -69,12 +69,15 @@ export default function MatchCard({ match, prediction, locked, userId }: Props) 
     if (home === "" || away === "") return;
     setSaving(true);
     const supabase = createClient();
-    await supabase.from("predictions").upsert(
+    const { error } = await supabase.from("predictions").upsert(
       { user_id: userId, match_id: match.id, home_score: parseInt(home), away_score: parseInt(away) },
       { onConflict: "user_id,match_id" }
     );
     setSaving(false);
-    setSaved(true);
+    if (!error) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
   }
 
   const cestTime = parseISO(match.kickoff_at);
