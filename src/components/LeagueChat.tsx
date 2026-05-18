@@ -104,7 +104,7 @@ export default function LeagueChat({ leagueId, currentUserId, currentDisplayName
             <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[75%] flex flex-col gap-0.5 ${isMe ? "items-end" : "items-start"}`}>
                 {!isMe && (
-                  <span className="text-xs text-gray-400 dark:text-gray-600 ml-1 font-medium">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-1 font-medium">
                     {msg.display_name}
                   </span>
                 )}
