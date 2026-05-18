@@ -27,17 +27,18 @@ export default async function LeagueDetailPage({
   // Members + display names + tournament picks
   const { data: members } = await supabase
     .from("league_members")
-    .select("user_id, profiles(display_name, predicted_top_scorer_id)")
+    .select("user_id, profiles(display_name, predicted_top_scorer_id, predicted_winner)")
     .eq("league_id", id);
 
   const memberList = (members ?? []).map((m) => {
     const profile = Array.isArray(m.profiles)
-      ? (m.profiles[0] as { display_name: string; predicted_top_scorer_id: string | null } | undefined)
-      : (m.profiles as { display_name: string; predicted_top_scorer_id: string | null } | null);
+      ? (m.profiles[0] as { display_name: string; predicted_top_scorer_id: string | null; predicted_winner: string | null } | undefined)
+      : (m.profiles as { display_name: string; predicted_top_scorer_id: string | null; predicted_winner: string | null } | null);
     return {
       userId: m.user_id,
       displayName: profile?.display_name ?? "Joueur",
       topScorerId: profile?.predicted_top_scorer_id ?? null,
+      predictedWinner: profile?.predicted_winner ?? null,
     };
   });
 
@@ -89,15 +90,17 @@ export default async function LeagueDetailPage({
     }
   }
 
-  // Player goal tallies (for top scorer bonus)
-  const { data: allPlayers } = await supabase
-    .from("players")
-    .select("id, goals, won_golden_boot");
+  // Player goal tallies + tournament winner — fetched in parallel
+  const [{ data: allPlayers }, { data: appConfig }] = await Promise.all([
+    supabase.from("players").select("id, goals, won_golden_boot"),
+    supabase.from("app_config").select("key, value"),
+  ]);
   const playerMap = new Map(
     (allPlayers ?? []).map((p) => [p.id, p as { id: string; goals: number; won_golden_boot: boolean }])
   );
+  const tournamentWinner = appConfig?.find((c) => c.key === "tournament_winner")?.value ?? null;
 
-  // Leaderboard — match points + top scorer bonus
+  // Leaderboard — match points + top scorer bonus + predicted winner bonus
   const leaderboard = memberList.map((member) => {
     const preds = (allPredictions ?? []).filter(
       (p) => p.user_id === member.userId && finishedMatchIds.has(p.match_id)
@@ -115,7 +118,9 @@ export default async function LeagueDetailPage({
     }, 0);
     const player = member.topScorerId ? playerMap.get(member.topScorerId) : null;
     const topScorerBonus = player ? calculateTopScorerBonus(player.goals, player.won_golden_boot) : 0;
-    return { ...member, points: matchPoints + topScorerBonus, matchPoints, topScorerBonus, predictionsCount: preds.length };
+    const winnerBonus = tournamentWinner && member.predictedWinner === tournamentWinner ? 20 : 0;
+    const points = matchPoints + topScorerBonus + winnerBonus;
+    return { ...member, points, matchPoints, topScorerBonus, winnerBonus, predictionsCount: preds.length };
   });
   leaderboard.sort((a, b) => b.points - a.points);
 
@@ -239,6 +244,11 @@ export default async function LeagueDetailPage({
                     {entry.topScorerBonus > 0 && (
                       <div className="text-[10px] text-emerald-500 dark:text-emerald-400 font-semibold">
                         ⚽ +{entry.topScorerBonus}
+                      </div>
+                    )}
+                    {entry.winnerBonus > 0 && (
+                      <div className="text-[10px] text-amber-500 dark:text-amber-400 font-semibold">
+                        🏆 +{entry.winnerBonus}
                       </div>
                     )}
                   </td>
