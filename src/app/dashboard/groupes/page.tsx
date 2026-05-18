@@ -6,7 +6,7 @@ export const revalidate = 0;
 export default async function GroupesPage() {
   const supabase = await createClient();
 
-  const [{ data: groupMatches }, { data: knockoutMatches }] = await Promise.all([
+  const [{ data: groupMatches }, { data: knockoutMatches }, { data: players }] = await Promise.all([
     supabase
       .from("matches")
       .select("id, home_team, away_team, phase, home_score, away_score, kickoff_at")
@@ -17,6 +17,11 @@ export default async function GroupesPage() {
       .select("id, home_team, away_team, kickoff_at, phase, home_score, away_score")
       .not("phase", "like", "Groupe %")
       .order("kickoff_at"),
+    supabase
+      .from("players")
+      .select("id, name, team, team_flag, goals, won_golden_boot")
+      .order("goals", { ascending: false })
+      .order("name"),
   ]);
 
   const withResult = (groupMatches ?? []).filter((m) => m.home_score !== null);
@@ -28,6 +33,7 @@ export default async function GroupesPage() {
       groupMatches={groupMatches ?? []}
       knockoutMatches={knockoutMatches ?? []}
       pctComplete={pctComplete}
+      players={players ?? []}
     />
   );
 }
