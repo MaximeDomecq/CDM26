@@ -49,6 +49,8 @@ interface Profile {
   predicted_top_scorer_id: string | null;
 }
 
+const WC_START = new Date("2026-06-11T19:00:00Z");
+
 export default function ProfilePage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -57,6 +59,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [search, setSearch] = useState("");
+
+  const locked = new Date() >= WC_START;
 
   useEffect(() => {
     async function load() {
@@ -98,7 +102,17 @@ export default function ProfilePage() {
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-1">Mon profil</h1>
-      <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">Personnalisez votre expérience et faites vos pronostics de tournoi.</p>
+      <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Personnalisez votre expérience et faites vos pronostics de tournoi.</p>
+
+      {locked && (
+        <div className="mb-6 flex items-start gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-2xl px-5 py-4">
+          <span className="text-xl">🔒</span>
+          <div>
+            <p className="font-bold text-amber-800 dark:text-amber-400 text-sm">Pronostics de tournoi verrouillés</p>
+            <p className="text-xs text-amber-700 dark:text-amber-500 mt-0.5">Le tournoi a débuté — ton équipe favorite, ton vainqueur prédit et ton meilleur buteur ne peuvent plus être modifiés.</p>
+          </div>
+        </div>
+      )}
 
       {/* Favorite team */}
       <Section title="Équipe favorite" sub="Affichée dans le header et sur votre profil.">
@@ -106,8 +120,9 @@ export default function ProfilePage() {
           {TEAMS.map((team) => (
             <button
               key={team.name}
+              disabled={locked}
               onClick={() => { setField("favorite_team", team.name); setField("favorite_team_flag", team.flag); }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-all ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
                 profile.favorite_team === team.name
                   ? "border-brand-500 bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-400 font-semibold shadow-sm"
                   : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-brand-300 dark:hover:border-brand-700 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -126,8 +141,9 @@ export default function ProfilePage() {
           {TEAMS.map((team) => (
             <button
               key={team.name}
+              disabled={locked}
               onClick={() => { setField("predicted_winner", team.name); setField("predicted_winner_flag", team.flag); }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-all ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
                 profile.predicted_winner === team.name
                   ? "border-gold-400 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-400 font-semibold shadow-sm"
                   : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gold-300 dark:hover:border-gold-700 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -151,14 +167,16 @@ export default function ProfilePage() {
           placeholder="Rechercher un joueur ou une équipe…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm mb-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          disabled={locked}
+          className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm mb-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60 disabled:cursor-not-allowed"
         />
         <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto">
           {filteredPlayers.map((player) => (
             <button
               key={player.id}
+              disabled={locked}
               onClick={() => setField("predicted_top_scorer_id", player.id)}
-              className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm border transition-all text-left ${
+              className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm border transition-all text-left disabled:cursor-not-allowed disabled:opacity-60 ${
                 profile.predicted_top_scorer_id === player.id
                   ? "border-brand-500 bg-brand-50 dark:bg-brand-950/40 font-semibold"
                   : "border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-brand-200 dark:hover:border-brand-800 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -180,17 +198,19 @@ export default function ProfilePage() {
         </div>
       </Section>
 
-      <button
-        onClick={save}
-        disabled={saving}
-        className={`w-full py-3 rounded-2xl font-black text-lg transition-all active:scale-95 disabled:opacity-50 ${
-          saved
-            ? "bg-emerald-500 text-white"
-            : "bg-brand-600 hover:bg-brand-700 text-white shadow-sm hover:shadow"
-        }`}
-      >
-        {saved ? "✓ Enregistré !" : saving ? "Enregistrement…" : "Sauvegarder le profil"}
-      </button>
+      {!locked && (
+        <button
+          onClick={save}
+          disabled={saving}
+          className={`w-full py-3 rounded-2xl font-black text-lg transition-all active:scale-95 disabled:opacity-50 ${
+            saved
+              ? "bg-emerald-500 text-white"
+              : "bg-brand-600 hover:bg-brand-700 text-white shadow-sm hover:shadow"
+          }`}
+        >
+          {saved ? "✓ Enregistré !" : saving ? "Enregistrement…" : "Sauvegarder le profil"}
+        </button>
+      )}
     </div>
   );
 }
