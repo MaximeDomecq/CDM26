@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import NotificationButton from "@/components/NotificationButton";
+import ProfileDropdown from "@/components/ProfileDropdown";
 
 export default async function DashboardLayout({
   children,
@@ -22,9 +21,17 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("favorite_team, favorite_team_flag")
+    .select("favorite_team, favorite_team_flag, predicted_winner, predicted_winner_flag, predicted_top_scorer_id")
     .eq("id", user.id)
     .single();
+
+  let topScorerName: string | null = null;
+  let topScorerFlag: string | null = null;
+  const topScorerId = (profile as { predicted_top_scorer_id?: string | null } | null)?.predicted_top_scorer_id;
+  if (topScorerId) {
+    const { data: player } = await supabase.from("players").select("name, team_flag").eq("id", topScorerId).single();
+    if (player) { topScorerName = player.name; topScorerFlag = player.team_flag; }
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
@@ -47,22 +54,15 @@ export default async function DashboardLayout({
             <NavLink href="/dashboard/groupes">📊 Compétition</NavLink>
             <NavLink href="/dashboard/leagues">🏆 Ligues</NavLink>
             <div className="w-px h-5 bg-white/20 mx-1 flex-shrink-0" />
-            <Link
-              href="/dashboard/profile"
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-all flex-shrink-0"
-            >
-              {profile?.favorite_team_flag && (
-                <span className="text-base">{profile.favorite_team_flag}</span>
-              )}
-              <span className="max-w-[80px] truncate text-xs text-gold-300 font-semibold hidden md:block">{displayName}</span>
-            </Link>
-            <NotificationButton />
-            <ThemeToggle />
-            <form action="/auth/signout" method="post">
-              <button className="px-2 py-1.5 rounded-lg text-white/50 hover:text-white/80 hover:bg-white/10 transition-all text-xs flex-shrink-0">
-                ⏏
-              </button>
-            </form>
+            <ProfileDropdown
+              displayName={displayName}
+              favoriteTeamFlag={profile?.favorite_team_flag ?? null}
+              favoriteTeam={profile?.favorite_team ?? null}
+              predictedWinnerFlag={(profile as { predicted_winner_flag?: string | null } | null)?.predicted_winner_flag ?? null}
+              predictedWinner={(profile as { predicted_winner?: string | null } | null)?.predicted_winner ?? null}
+              topScorerName={topScorerName}
+              topScorerFlag={topScorerFlag}
+            />
           </nav>
         </div>
       </header>
