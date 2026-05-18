@@ -63,6 +63,14 @@ const TEAM_MAP: Record<string, string> = {
   "New Zealand": "Nouvelle-Zélande",
 };
 
+function normalizeName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Mn}/gu, "")
+    .trim();
+}
+
 export async function GET(req: NextRequest) {
   // Protect with secret so only cron-job.org can trigger it
   const secret = req.nextUrl.searchParams.get("secret");
@@ -129,5 +137,36 @@ export async function GET(req: NextRequest) {
     if (!error) updated++;
   }
 
-  return NextResponse.json({ ok: true, updated, skipped, total: matches.length });
+  // Sync player goal tallies from scorers endpoint
+  let playersUpdated = 0;
+  try {
+    const scorersRes = await fetch(
+      "https://api.football-data.org/v4/competitions/WC/scorers?limit=200",
+      { headers: { "X-Auth-Token": apiKey }, next: { revalidate: 0 } }
+    );
+    if (scorersRes.ok) {
+      const { scorers } = await scorersRes.json() as {
+        scorers: { player: { name: string }; goals: number }[];
+      };
+      const { data: dbPlayers } = await supabase.from("players").select("id, name");
+      for (const dbPlayer of dbPlayers ?? []) {
+        const normalizedDb = normalizeName(dbPlayer.name);
+        const apiScorer = scorers.find((s) => {
+          const normalizedApi = normalizeName(s.player.name);
+          return normalizedApi.includes(normalizedDb) || normalizedDb.includes(normalizedApi);
+        });
+        if (apiScorer !== undefined) {
+          const { error } = await supabase
+            .from("players")
+            .update({ goals: apiScorer.goals })
+            .eq("id", dbPlayer.id);
+          if (!error) playersUpdated++;
+        }
+      }
+    }
+  } catch {
+    // non-fatal: scorers sync failure doesn't block match sync response
+  }
+
+  return NextResponse.json({ ok: true, updated, skipped, total: matches.length, playersUpdated });
 }

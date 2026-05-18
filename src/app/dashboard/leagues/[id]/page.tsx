@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import { calculatePoints, getTier } from "@/lib/scoring";
+import { calculatePoints, calculateTopScorerBonus, getTier } from "@/lib/scoring";
 import type { MatchBreakdownItem } from "@/components/LeagueMatchBreakdown";
 import LeagueMatchBreakdown from "@/components/LeagueMatchBreakdown";
 import LeagueChat from "@/components/LeagueChat";
@@ -24,19 +24,22 @@ export default async function LeagueDetailPage({
 
   if (!league) notFound();
 
-  // Members + display names
+  // Members + display names + tournament picks
   const { data: members } = await supabase
     .from("league_members")
-    .select("user_id, profiles(display_name)")
+    .select("user_id, profiles(display_name, predicted_top_scorer_id)")
     .eq("league_id", id);
 
-  const memberList = (members ?? []).map((m) => ({
-    userId: m.user_id,
-    displayName:
-      (Array.isArray(m.profiles)
-        ? (m.profiles[0] as { display_name: string } | undefined)?.display_name
-        : (m.profiles as { display_name: string } | null)?.display_name) ?? "Joueur",
-  }));
+  const memberList = (members ?? []).map((m) => {
+    const profile = Array.isArray(m.profiles)
+      ? (m.profiles[0] as { display_name: string; predicted_top_scorer_id: string | null } | undefined)
+      : (m.profiles as { display_name: string; predicted_top_scorer_id: string | null } | null);
+    return {
+      userId: m.user_id,
+      displayName: profile?.display_name ?? "Joueur",
+      topScorerId: profile?.predicted_top_scorer_id ?? null,
+    };
+  });
 
   const memberIds = memberList.map((m) => m.userId);
   const displayNameMap = new Map(memberList.map((m) => [m.userId, m.displayName]));
@@ -86,12 +89,20 @@ export default async function LeagueDetailPage({
     }
   }
 
-  // Leaderboard — from finished matches only
+  // Player goal tallies (for top scorer bonus)
+  const { data: allPlayers } = await supabase
+    .from("players")
+    .select("id, goals, won_golden_boot");
+  const playerMap = new Map(
+    (allPlayers ?? []).map((p) => [p.id, p as { id: string; goals: number; won_golden_boot: boolean }])
+  );
+
+  // Leaderboard — match points + top scorer bonus
   const leaderboard = memberList.map((member) => {
     const preds = (allPredictions ?? []).filter(
       (p) => p.user_id === member.userId && finishedMatchIds.has(p.match_id)
     );
-    const points = preds.reduce((sum, pred) => {
+    const matchPoints = preds.reduce((sum, pred) => {
       const match = matchMap.get(pred.match_id);
       if (!match) return sum;
       const exactList = exactPredictors.get(pred.match_id) ?? [];
@@ -102,7 +113,9 @@ export default async function LeagueDetailPage({
         uniqueExact
       );
     }, 0);
-    return { ...member, points, predictionsCount: preds.length };
+    const player = member.topScorerId ? playerMap.get(member.topScorerId) : null;
+    const topScorerBonus = player ? calculateTopScorerBonus(player.goals, player.won_golden_boot) : 0;
+    return { ...member, points: matchPoints + topScorerBonus, matchPoints, topScorerBonus, predictionsCount: preds.length };
   });
   leaderboard.sort((a, b) => b.points - a.points);
 
@@ -223,6 +236,11 @@ export default async function LeagueDetailPage({
                   <td className="px-4 py-3.5 text-right">
                     <span className="font-black text-brand-600 dark:text-brand-400 text-base">{entry.points}</span>
                     <span className="text-xs text-gray-400 dark:text-gray-600 ml-1">pts</span>
+                    {entry.topScorerBonus > 0 && (
+                      <div className="text-[10px] text-emerald-500 dark:text-emerald-400 font-semibold">
+                        ⚽ +{entry.topScorerBonus}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

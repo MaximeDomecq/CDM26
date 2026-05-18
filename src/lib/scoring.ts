@@ -65,3 +65,7 @@ export function calculatePoints(
   }
   return points;
 }
+
+export function calculateTopScorerBonus(goals: number, wonGoldenBoot: boolean): number {
+  return goals * 2 + (wonGoldenBoot ? 10 : 0);
+}
