@@ -18,12 +18,6 @@ export default async function DashboardLayout({
     { onConflict: "id", ignoreDuplicates: true }
   );
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("favorite_team, favorite_team_flag")
-    .eq("id", user.id)
-    .single();
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
       <header className="bg-wc-header sticky top-0 z-50 shadow-xl border-b border-white/5">
