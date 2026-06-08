@@ -24,8 +24,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
 
   const strength = passwordStrength(password);
 
@@ -35,13 +33,10 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
     const supabase = createClient();
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { display_name: displayName },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { data: { display_name: displayName } },
     });
     if (signUpError) {
       setError(
@@ -50,30 +45,9 @@ export default function RegisterPage() {
           : "Une erreur est survenue. Réessaie."
       );
       setLoading(false);
-    } else if (data.session) {
-      window.location.href = "/dashboard";
     } else {
-      setSent(true);
-      setLoading(false);
-      startCooldown();
+      window.location.href = "/dashboard";
     }
-  }
-
-  function startCooldown() {
-    setCooldown(60);
-    const iv = setInterval(() => {
-      setCooldown((c) => {
-        if (c <= 1) { clearInterval(iv); return 0; }
-        return c - 1;
-      });
-    }, 1000);
-  }
-
-  async function resend() {
-    if (cooldown > 0) return;
-    const supabase = createClient();
-    await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
-    startCooldown();
   }
 
   return (
@@ -106,37 +80,11 @@ export default function RegisterPage() {
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">CDM 2026</h1>
             <p className="text-xs font-bold uppercase tracking-widest mt-1" style={{ color: "#f59e0b" }}>
-              {sent ? "Vérifie tes emails" : "Rejoins la compétition"}
+              Rejoins la compétition
             </p>
           </div>
 
-          {sent ? (
-            /* Email sent state */
-            <div className="text-center">
-              <div className="text-5xl mb-4">📬</div>
-              <p className="text-white font-semibold text-base mb-2">Email envoyé !</p>
-              <p className="text-sm mb-1" style={{ color: "rgba(255,255,255,0.6)" }}>
-                Un lien de confirmation a été envoyé à
-              </p>
-              <p className="text-sm font-bold mb-5" style={{ color: "#f59e0b" }}>{email}</p>
-              <p className="text-xs mb-6" style={{ color: "rgba(255,255,255,0.45)" }}>
-                Clique sur le lien dans le mail pour activer ton compte. Vérifie aussi tes spams.
-              </p>
-              <button
-                onClick={resend}
-                disabled={cooldown > 0}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40 mb-4"
-                style={{ border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.05)" }}
-              >
-                {cooldown > 0 ? `Renvoyer dans ${cooldown}s` : "Renvoyer l'email"}
-              </button>
-              <Link href="/auth/login" className="text-sm font-semibold" style={{ color: "#f59e0b" }}>
-                Déjà confirmé ? Se connecter →
-              </Link>
-            </div>
-          ) : (
-            /* Registration form */
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
                 <label className="block text-sm font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.75)" }}>
                   Prénom / Pseudo
@@ -218,16 +166,13 @@ export default function RegisterPage() {
                 {loading ? "Création…" : "Créer mon compte"}
               </button>
             </form>
-          )}
 
-          {!sent && (
-            <p className="text-sm text-center mt-5" style={{ color: "rgba(255,255,255,0.5)" }}>
-              Déjà un compte ?{" "}
-              <Link href="/auth/login" className="font-bold hover:opacity-80" style={{ color: "#f59e0b" }}>
-                Se connecter
-              </Link>
-            </p>
-          )}
+          <p className="text-sm text-center mt-5" style={{ color: "rgba(255,255,255,0.5)" }}>
+            Déjà un compte ?{" "}
+            <Link href="/auth/login" className="font-bold hover:opacity-80" style={{ color: "#f59e0b" }}>
+              Se connecter
+            </Link>
+          </p>
         </div>
         <p className="text-center text-xs mt-4" style={{ color: "rgba(255,255,255,0.2)" }}>
           Bougez la souris ou cliquez pour jouer ⚽

@@ -18,44 +18,20 @@ function LoginForm() {
       : null
   );
   const [loading, setLoading] = useState(false);
-  const [unverified, setUnverified] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setUnverified(false);
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     if (signInError) {
-      if (signInError.message.toLowerCase().includes("email not confirmed")) {
-        setUnverified(true);
-      } else {
-        setError("Email ou mot de passe incorrect.");
-      }
+      setError("Email ou mot de passe incorrect.");
       setLoading(false);
     } else {
       router.push("/dashboard");
       router.refresh();
     }
-  }
-
-  function startCooldown() {
-    setResendCooldown(60);
-    const iv = setInterval(() => {
-      setResendCooldown((c) => {
-        if (c <= 1) { clearInterval(iv); return 0; }
-        return c - 1;
-      });
-    }, 1000);
-  }
-
-  async function resendVerification() {
-    if (resendCooldown > 0 || !email) return;
-    const supabase = createClient();
-    await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
-    startCooldown();
   }
 
   return (
@@ -97,24 +73,6 @@ function LoginForm() {
       {error && (
         <div className="rounded-xl px-4 py-2.5 text-sm font-medium" style={{ background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.35)", color: "#fca5a5" }}>
           {error}
-        </div>
-      )}
-
-      {unverified && (
-        <div className="rounded-xl px-4 py-3 text-sm" style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.35)" }}>
-          <p className="font-semibold mb-1" style={{ color: "#fcd34d" }}>📬 Email non confirmé</p>
-          <p className="mb-2" style={{ color: "rgba(255,255,255,0.65)" }}>
-            Clique sur le lien envoyé à <span className="font-bold" style={{ color: "#fcd34d" }}>{email}</span>.
-          </p>
-          <button
-            type="button"
-            onClick={resendVerification}
-            disabled={resendCooldown > 0}
-            className="text-xs font-bold underline disabled:opacity-40"
-            style={{ color: "#f59e0b" }}
-          >
-            {resendCooldown > 0 ? `Renvoyer dans ${resendCooldown}s` : "Renvoyer l'email de confirmation"}
-          </button>
         </div>
       )}
 
