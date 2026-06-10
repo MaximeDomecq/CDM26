@@ -48,24 +48,37 @@ function cestDate(utcIso: string) {
   return parseISO(utcIso);
 }
 
-// M6 diffuse 54 matchs : ouverture, tous les matchs de France,
-// les meilleures affiches de chaque journée, les demi-finales et la finale.
+// M6 diffuse 54 matchs (source Eurosport/Ouest-France juin 2026)
 const M6_KNOCKOUT_KEYWORDS = ["seizième", "huitième", "quart", "demi", "finale", "3e place", "petite"];
-const M6_TEAMS = new Set([
-  // Équipe de France
-  "France",
-  // Pays hôtes
-  "Mexique", "États-Unis", "Canada",
-  // Grandes nations (meilleures affiches)
-  "Brésil", "Argentine", "Allemagne", "Espagne", "Angleterre", "Portugal",
+
+function mk(a: string, b: string) { return [a, b].sort().join("|"); }
+
+const M6_GROUP_MATCHES = new Set([
+  mk("Mexique","Afrique du Sud"),   mk("Canada","Bosnie-Herzégovine"),
+  mk("Qatar","Suisse"),              mk("Brésil","Maroc"),
+  mk("Allemagne","Curaçao"),         mk("Pays-Bas","Japon"),
+  mk("Espagne","Cap-Vert"),          mk("Belgique","Égypte"),
+  mk("Arabie Saoudite","Uruguay"),   mk("France","Sénégal"),
+  mk("Irak","Norvège"),              mk("Portugal","RD Congo"),
+  mk("Angleterre","Croatie"),        mk("Tchéquie","Afrique du Sud"),
+  mk("Suisse","Bosnie-Herzégovine"), mk("États-Unis","Australie"),
+  mk("Écosse","Maroc"),              mk("Brésil","Haïti"),
+  mk("Pays-Bas","Suède"),            mk("Allemagne","Côte d'Ivoire"),
+  mk("Espagne","Arabie Saoudite"),   mk("Belgique","Iran"),
+  mk("Argentine","Autriche"),        mk("France","Irak"),
+  mk("Portugal","Ouzbékistan"),      mk("Angleterre","Ghana"),
+  mk("Suisse","Canada"),             mk("Écosse","Brésil"),
+  mk("Équateur","Allemagne"),        mk("Tunisie","Pays-Bas"),
+  mk("Norvège","France"),            mk("Uruguay","Espagne"),
+  mk("Panama","Angleterre"),         mk("Colombie","Portugal"),
 ]);
 
 function channels(homeTeam: string, awayTeam: string, phase: string): string[] {
   const ch = ["beIN Sports"];
   const phaseL = phase.toLowerCase();
   const isKnockout = M6_KNOCKOUT_KEYWORDS.some(p => phaseL.includes(p));
-  const isM6Team = M6_TEAMS.has(homeTeam) || M6_TEAMS.has(awayTeam);
-  if (isM6Team || isKnockout) ch.unshift("M6");
+  const isGroupM6 = M6_GROUP_MATCHES.has(mk(homeTeam, awayTeam));
+  if (isGroupM6 || isKnockout) ch.unshift("M6");
   return ch;
 }
 
