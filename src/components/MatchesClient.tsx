@@ -29,11 +29,12 @@ interface Props {
   userId: string;
   favoriteTeam: string | null;
   favoriteTeamFlag: string | null;
+  newScoreIds?: Set<string>;
 }
 
 type View = "date" | "group" | "today" | "favorite";
 
-export default function MatchesClient({ matches, predictions, userId, favoriteTeam, favoriteTeamFlag }: Props) {
+export default function MatchesClient({ matches, predictions, userId, favoriteTeam, favoriteTeamFlag, newScoreIds }: Props) {
   const [view, setView] = useState<View>("date");
 
   const predictionMap = useMemo(
@@ -93,6 +94,7 @@ export default function MatchesClient({ matches, predictions, userId, favoriteTe
             prediction={predictionMap.get(m.id) ?? null}
             locked={parseISO(m.kickoff_at) <= now || m.home_score !== null}
             userId={userId}
+            freshScore={newScoreIds?.has(m.id) ?? false}
           />
         ))}
       </div>

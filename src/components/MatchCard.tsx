@@ -30,6 +30,7 @@ interface Props {
   prediction: Prediction | null;
   locked: boolean;
   userId: string;
+  freshScore?: boolean;
 }
 
 const TIER_CONFIG = {
@@ -40,7 +41,7 @@ const TIER_CONFIG = {
   wrong:          { label: "Raté", cls: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400" },
 };
 
-export default function MatchCard({ match, prediction, locked, userId }: Props) {
+export default function MatchCard({ match, prediction, locked, userId, freshScore = false }: Props) {
   const [home, setHome] = useState(prediction?.home_score?.toString() ?? "");
   const [away, setAway] = useState(prediction?.away_score?.toString() ?? "");
   const [saving, setSaving] = useState(false);
@@ -146,7 +147,10 @@ export default function MatchCard({ match, prediction, locked, userId }: Props) 
 
           <div className="flex flex-col items-center gap-0.5 px-2">
             {hasResult ? (
-              <div className="flex items-center gap-1.5">
+              <div className={clsx(
+                "flex items-center gap-1.5 px-3 py-1 rounded-xl transition-all duration-700",
+                freshScore && "bg-emerald-50 dark:bg-emerald-900/30 ring-2 ring-emerald-400 dark:ring-emerald-600 scale-105"
+              )}>
                 <span className="text-3xl font-black text-gray-900 dark:text-white w-8 text-center tabular-nums">
                   {match.home_score}
                 </span>

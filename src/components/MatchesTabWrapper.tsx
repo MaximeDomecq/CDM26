@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { flag } from "@/lib/teams";
 import MatchesClient from "./MatchesClient";
 import { getTier, calculatePoints, type ScoreTier } from "@/lib/scoring";
+import { createClient } from "@/lib/supabase/client";
 
 interface Match {
   id: string;
@@ -274,16 +275,46 @@ function ResultsView({ matches, predictions }: { matches: Match[]; predictions: 
 }
 
 export default function MatchesTabWrapper({
-  matches, predictions, userId, favoriteTeam, favoriteTeamFlag, calendarMatches,
+  matches: initialMatches, predictions, userId, favoriteTeam, favoriteTeamFlag, calendarMatches,
 }: Props) {
   const [tab, setTab] = useState<"pronos" | "resultats" | "calendrier">("pronos");
+  const [matches, setMatches] = useState<Match[]>(initialMatches);
+  const [newScoreIds, setNewScoreIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("matches-live")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "matches" },
+        (payload) => {
+          const updated = payload.new as Match;
+          setMatches(prev => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m));
+          if (updated.home_score !== null) {
+            setNewScoreIds(prev => new Set(prev).add(updated.id));
+            setTimeout(() => {
+              setNewScoreIds(prev => { const s = new Set(prev); s.delete(updated.id); return s; });
+            }, 5000);
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const finishedCount = matches.filter(m => m.home_score !== null).length;
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-4">Matchs</h1>
+        <div className="flex items-center gap-3 mb-4">
+          <h1 className="text-2xl font-black text-gray-900 dark:text-white">Matchs</h1>
+          <span className="flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+            Live
+          </span>
+        </div>
         <div className="flex gap-2 flex-wrap">
           <TabBtn active={tab === "pronos"} onClick={() => setTab("pronos")}>⚽ Pronostics</TabBtn>
           <TabBtn active={tab === "resultats"} onClick={() => setTab("resultats")}>
@@ -300,6 +331,7 @@ export default function MatchesTabWrapper({
           userId={userId}
           favoriteTeam={favoriteTeam}
           favoriteTeamFlag={favoriteTeamFlag}
+          newScoreIds={newScoreIds}
         />
       ) : tab === "resultats" ? (
         <ResultsView matches={matches} predictions={predictions} />
