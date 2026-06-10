@@ -32,10 +32,11 @@ function normalizeName(name: string): string {
   return name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 }
 
-// Called by Vercel cron every 30 minutes — secured with Bearer token
+// Called by Vercel cron — Vercel auto-sends VERCEL_CRON_SECRET as Bearer token
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.RESULTS_REFRESH_SECRET}`) {
+  const expected = process.env.VERCEL_CRON_SECRET ?? process.env.RESULTS_REFRESH_SECRET;
+  if (expected && auth !== `Bearer ${expected}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
