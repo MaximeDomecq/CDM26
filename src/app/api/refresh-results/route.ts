@@ -1,8 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-// Called by a Vercel cron job every 5 minutes during the tournament
-// Secured with a shared secret in the Authorization header
+// English name (football-data.org) → French name (our DB)
+const TEAM_MAP: Record<string, string> = {
+  "Mexico": "Mexique", "South Africa": "Afrique du Sud",
+  "South Korea": "Corée du Sud", "Korea Republic": "Corée du Sud", "Republic of Korea": "Corée du Sud",
+  "Czech Republic": "Tchéquie", "Czechia": "Tchéquie",
+  "Bosnia and Herzegovina": "Bosnie-Herzégovine", "Bosnia-Herzegovina": "Bosnie-Herzégovine",
+  "Netherlands": "Pays-Bas", "Germany": "Allemagne", "England": "Angleterre",
+  "Austria": "Autriche", "Belgium": "Belgique", "Croatia": "Croatie",
+  "Spain": "Espagne", "France": "France", "Norway": "Norvège",
+  "Portugal": "Portugal", "Sweden": "Suède", "Switzerland": "Suisse",
+  "Scotland": "Écosse", "Turkey": "Turquie", "Türkiye": "Turquie",
+  "Argentina": "Argentine", "Brazil": "Brésil", "Colombia": "Colombie",
+  "Ecuador": "Équateur", "Paraguay": "Paraguay", "Uruguay": "Uruguay",
+  "Algeria": "Algérie", "Cape Verde": "Cap-Vert",
+  "Ivory Coast": "Côte d'Ivoire", "Côte d'Ivoire": "Côte d'Ivoire",
+  "Egypt": "Égypte", "Ghana": "Ghana", "Morocco": "Maroc",
+  "DR Congo": "RD Congo", "Democratic Republic of Congo": "RD Congo", "Congo DR": "RD Congo",
+  "Senegal": "Sénégal", "Tunisia": "Tunisie",
+  "Saudi Arabia": "Arabie Saoudite", "Australia": "Australie",
+  "Iran": "Iran", "Iraq": "Irak", "Japan": "Japon",
+  "Jordan": "Jordanie", "Qatar": "Qatar", "Uzbekistan": "Ouzbékistan",
+  "Canada": "Canada", "Curaçao": "Curaçao",
+  "USA": "États-Unis", "United States": "États-Unis",
+  "Haiti": "Haïti", "Haïti": "Haïti", "Panama": "Panama",
+  "New Zealand": "Nouvelle-Zélande",
+};
+
+function normalizeName(name: string): string {
+  return name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+}
+
+// Called by Vercel cron every 30 minutes — secured with Bearer token
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${process.env.RESULTS_REFRESH_SECRET}`) {
@@ -10,44 +40,79 @@ export async function GET(req: NextRequest) {
   }
 
   const apiKey = process.env.FOOTBALL_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "No API key configured" }, { status: 500 });
-  }
-
-  // football-data.org: competition 2000 = FIFA World Cup
-  const res = await fetch(
-    "https://api.football-data.org/v4/competitions/2000/matches?status=FINISHED",
-    { headers: { "X-Auth-Token": apiKey } }
-  );
-
-  if (!res.ok) {
-    return NextResponse.json({ error: "Football API error" }, { status: 502 });
-  }
-
-  const json = await res.json();
-  const apiMatches: {
-    id: number;
-    utcDate: string;
-    homeTeam: { name: string };
-    awayTeam: { name: string };
-    score: { fullTime: { home: number | null; away: number | null } };
-  }[] = json.matches ?? [];
+  if (!apiKey) return NextResponse.json({ error: "FOOTBALL_API_KEY not set" }, { status: 500 });
 
   const supabase = createAdminClient();
 
+  // ── Scores ─────────────────────────────────────────────────────────────────
+  const res = await fetch(
+    "https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED",
+    { headers: { "X-Auth-Token": apiKey }, next: { revalidate: 0 } }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    return NextResponse.json({ error: `API error ${res.status}`, detail: text }, { status: 502 });
+  }
+
+  const { matches } = await res.json() as {
+    matches: {
+      homeTeam: { name: string };
+      awayTeam: { name: string };
+      score: { fullTime: { home: number | null; away: number | null } };
+    }[]
+  };
+
   let updated = 0;
-  for (const m of apiMatches) {
-    const homeScore = m.score.fullTime.home;
-    const awayScore = m.score.fullTime.away;
-    if (homeScore === null || awayScore === null) continue;
+  let skipped = 0;
+
+  for (const m of matches) {
+    const { home, away } = m.score.fullTime;
+    if (home === null || away === null) continue;
+
+    const homeFr = TEAM_MAP[m.homeTeam.name];
+    const awayFr = TEAM_MAP[m.awayTeam.name];
+
+    if (!homeFr || !awayFr) { skipped++; continue; }
 
     const { error } = await supabase
       .from("matches")
-      .update({ home_score: homeScore, away_score: awayScore })
-      .eq("api_id", m.id);
+      .update({ home_score: home, away_score: away })
+      .eq("home_team", homeFr)
+      .eq("away_team", awayFr)
+      .is("home_score", null);
 
     if (!error) updated++;
   }
 
-  return NextResponse.json({ updated });
+  // ── Buteurs ────────────────────────────────────────────────────────────────
+  let playersUpdated = 0;
+  try {
+    const scorersRes = await fetch(
+      "https://api.football-data.org/v4/competitions/WC/scorers?limit=200",
+      { headers: { "X-Auth-Token": apiKey }, next: { revalidate: 0 } }
+    );
+    if (scorersRes.ok) {
+      const { scorers } = await scorersRes.json() as {
+        scorers: { player: { name: string }; goals: number }[]
+      };
+      const { data: dbPlayers } = await supabase.from("players").select("id, name");
+      for (const dbPlayer of dbPlayers ?? []) {
+        const normalizedDb = normalizeName(dbPlayer.name);
+        const apiScorer = scorers.find((s) => {
+          const normalizedApi = normalizeName(s.player.name);
+          return normalizedApi.includes(normalizedDb) || normalizedDb.includes(normalizedApi);
+        });
+        if (apiScorer !== undefined) {
+          const { error } = await supabase
+            .from("players")
+            .update({ goals: apiScorer.goals })
+            .eq("id", dbPlayer.id);
+          if (!error) playersUpdated++;
+        }
+      }
+    }
+  } catch { /* non-fatal */ }
+
+  return NextResponse.json({ ok: true, updated, skipped, total: matches.length, playersUpdated });
 }

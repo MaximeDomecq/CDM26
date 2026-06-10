@@ -5,6 +5,7 @@ import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { flag } from "@/lib/teams";
 import MatchesClient from "./MatchesClient";
+import { getTier, calculatePoints, type ScoreTier } from "@/lib/scoring";
 
 interface Match {
   id: string;
@@ -156,17 +157,138 @@ function CalendarView({ matches }: { matches: CalendarMatch[] }) {
   );
 }
 
+const TIER_LABEL: Record<ScoreTier, string> = {
+  exact: "Score exact",
+  goal_diff: "Diff. de buts",
+  correct_winner: "Bon vainqueur",
+  total_goals: "Total buts",
+  wrong: "Raté",
+};
+
+const TIER_STYLE: Record<ScoreTier, string> = {
+  exact: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400",
+  goal_diff: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400",
+  correct_winner: "bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-400",
+  total_goals: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400",
+  wrong: "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
+};
+
+function ResultsView({ matches, predictions }: { matches: Match[]; predictions: Prediction[] }) {
+  const finished = matches.filter(m => m.home_score !== null && m.away_score !== null);
+  const predMap = new Map(predictions.map(p => [p.match_id, p]));
+
+  if (finished.length === 0) {
+    return (
+      <p className="text-gray-400 dark:text-gray-600 py-8 text-center">
+        Aucun match terminé pour l&apos;instant.
+      </p>
+    );
+  }
+
+  let totalPoints = 0;
+  for (const m of finished) {
+    const pred = predMap.get(m.id);
+    if (pred && m.home_score !== null && m.away_score !== null) {
+      totalPoints += calculatePoints(pred, { home_score: m.home_score, away_score: m.away_score });
+    }
+  }
+
+  return (
+    <div>
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          {finished.length} match{finished.length > 1 ? "s" : ""} terminé{finished.length > 1 ? "s" : ""}
+        </p>
+        <div className="px-3 py-1.5 rounded-xl bg-wc-header text-white text-sm font-black">
+          {totalPoints} pts au total
+        </div>
+      </div>
+      <div className="flex flex-col gap-3">
+        {finished.map(m => {
+          const pred = predMap.get(m.id);
+          const result = { home_score: m.home_score!, away_score: m.away_score! };
+          const tier = pred ? getTier(pred, result) : null;
+          const pts = pred ? calculatePoints(pred, result) : null;
+
+          return (
+            <div
+              key={m.id}
+              className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 px-5 py-4"
+            >
+              {/* Match row */}
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-xs text-gray-400 dark:text-gray-600 font-semibold uppercase tracking-wide w-16 flex-shrink-0">
+                  {m.phase}
+                </span>
+                <div className="flex-1 flex items-center justify-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xl">{flag(m.home_team)}</span>
+                    <span className="font-bold text-gray-900 dark:text-white text-sm">{m.home_team}</span>
+                  </div>
+                  <span className="font-black text-lg text-gray-900 dark:text-white px-3 py-1 rounded-lg bg-gray-50 dark:bg-gray-800 font-mono">
+                    {m.home_score} – {m.away_score}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-gray-900 dark:text-white text-sm">{m.away_team}</span>
+                    <span className="text-xl">{flag(m.away_team)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Prediction row */}
+              <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
+                {pred ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400 dark:text-gray-600">Ton prono :</span>
+                      <span className="font-black text-gray-700 dark:text-gray-300 font-mono text-sm">
+                        {pred.home_score} – {pred.away_score}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {tier && (
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${TIER_STYLE[tier]}`}>
+                          {TIER_LABEL[tier]}
+                        </span>
+                      )}
+                      <span className={`text-sm font-black px-3 py-1 rounded-xl ${
+                        pts === 5 ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400"
+                        : pts! >= 3 ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400"
+                        : pts! >= 1 ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"
+                      }`}>
+                        {pts} pt{pts !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-xs text-gray-300 dark:text-gray-700 italic">Aucun pronostic</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function MatchesTabWrapper({
   matches, predictions, userId, favoriteTeam, favoriteTeamFlag, calendarMatches,
 }: Props) {
-  const [tab, setTab] = useState<"pronos" | "calendrier">("pronos");
+  const [tab, setTab] = useState<"pronos" | "resultats" | "calendrier">("pronos");
+
+  const finishedCount = matches.filter(m => m.home_score !== null).length;
 
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-4">Matchs</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <TabBtn active={tab === "pronos"} onClick={() => setTab("pronos")}>⚽ Pronostics</TabBtn>
+          <TabBtn active={tab === "resultats"} onClick={() => setTab("resultats")}>
+            🏆 Résultats{finishedCount > 0 && <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400">{finishedCount}</span>}
+          </TabBtn>
           <TabBtn active={tab === "calendrier"} onClick={() => setTab("calendrier")}>📅 Calendrier</TabBtn>
         </div>
       </div>
@@ -179,6 +301,8 @@ export default function MatchesTabWrapper({
           favoriteTeam={favoriteTeam}
           favoriteTeamFlag={favoriteTeamFlag}
         />
+      ) : tab === "resultats" ? (
+        <ResultsView matches={matches} predictions={predictions} />
       ) : (
         <CalendarView matches={calendarMatches} />
       )}
