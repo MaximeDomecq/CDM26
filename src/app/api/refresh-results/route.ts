@@ -22,7 +22,7 @@ const TEAM_MAP: Record<string, string> = {
   "Saudi Arabia": "Arabie Saoudite", "Australia": "Australie",
   "Iran": "Iran", "Iraq": "Irak", "Japan": "Japon",
   "Jordan": "Jordanie", "Qatar": "Qatar", "Uzbekistan": "Ouzbékistan",
-  "Canada": "Canada", "Curaçao": "Curaçao",
+  "Canada": "Canada", "Curaçao": "Curaçao", "Curacao": "Curaçao",
   "USA": "États-Unis", "United States": "États-Unis",
   "Haiti": "Haïti", "Haïti": "Haïti", "Panama": "Panama",
   "New Zealand": "Nouvelle-Zélande",
