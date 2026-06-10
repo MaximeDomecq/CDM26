@@ -48,20 +48,24 @@ function cestDate(utcIso: string) {
   return parseISO(utcIso);
 }
 
-// Matches on M6: all France matches + knockout rounds + opening match
-const M6_PHASES = ["seizième", "huitième", "quart", "demi", "finale", "3e place", "petite"];
-const M6_TEAMS = ["France"];
-// Opening match: Mexico vs host USA on June 11
-const M6_OPENING: [string, string] = ["Mexique", "États-Unis"];
+// M6 diffuse 54 matchs : ouverture, tous les matchs de France,
+// les meilleures affiches de chaque journée, les demi-finales et la finale.
+const M6_KNOCKOUT_KEYWORDS = ["seizième", "huitième", "quart", "demi", "finale", "3e place", "petite"];
+const M6_TEAMS = new Set([
+  // Équipe de France
+  "France",
+  // Pays hôtes
+  "Mexique", "États-Unis", "Canada",
+  // Grandes nations (meilleures affiches)
+  "Brésil", "Argentine", "Allemagne", "Espagne", "Angleterre", "Portugal",
+]);
 
 function channels(homeTeam: string, awayTeam: string, phase: string): string[] {
   const ch = ["beIN Sports"];
   const phaseL = phase.toLowerCase();
-  const isKnockout = M6_PHASES.some(p => phaseL.includes(p));
-  const involvesFrance = M6_TEAMS.some(t => homeTeam === t || awayTeam === t);
-  const isOpening = (homeTeam === M6_OPENING[0] && awayTeam === M6_OPENING[1])
-                 || (homeTeam === M6_OPENING[1] && awayTeam === M6_OPENING[0]);
-  if (involvesFrance || isKnockout || isOpening) ch.unshift("M6");
+  const isKnockout = M6_KNOCKOUT_KEYWORDS.some(p => phaseL.includes(p));
+  const isM6Team = M6_TEAMS.has(homeTeam) || M6_TEAMS.has(awayTeam);
+  if (isM6Team || isKnockout) ch.unshift("M6");
   return ch;
 }
 
