@@ -20,6 +20,7 @@ export default async function GroupesPage() {
     supabase
       .from("players")
       .select("id, name, team, team_flag, goals, won_golden_boot")
+      .gt("goals", 0)
       .order("goals", { ascending: false })
       .order("name"),
   ]);

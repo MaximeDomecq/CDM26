@@ -88,6 +88,9 @@ export async function GET(req: NextRequest) {
 
   // ── Buteurs ────────────────────────────────────────────────────────────────
   let playersUpdated = 0;
+  let topScorerId: string | null = null;
+  let topGoals = 0;
+
   try {
     const scorersRes = await fetch(
       "https://api.football-data.org/v4/competitions/WC/scorers?limit=200",
@@ -109,11 +112,23 @@ export async function GET(req: NextRequest) {
             .from("players")
             .update({ goals: apiScorer.goals })
             .eq("id", dbPlayer.id);
-          if (!error) playersUpdated++;
+          if (!error) {
+            playersUpdated++;
+            if (apiScorer.goals > topGoals) {
+              topGoals = apiScorer.goals;
+              topScorerId = dbPlayer.id;
+            }
+          }
         }
+      }
+
+      // Auto-detect golden boot leader — mark current leader, clear others
+      if (topScorerId && topGoals > 0) {
+        await supabase.from("players").update({ won_golden_boot: false }).neq("id", topScorerId);
+        await supabase.from("players").update({ won_golden_boot: true }).eq("id", topScorerId);
       }
     }
   } catch { /* non-fatal */ }
 
-  return NextResponse.json({ ok: true, updated, skipped, total: matches.length, playersUpdated });
+  return NextResponse.json({ ok: true, updated, skipped, total: matches.length, playersUpdated, topScorerId, topGoals });
 }

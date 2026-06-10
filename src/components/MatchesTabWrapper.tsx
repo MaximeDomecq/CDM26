@@ -48,9 +48,20 @@ function cestDate(utcIso: string) {
   return parseISO(utcIso);
 }
 
-function channels(homeTeam: string, awayTeam: string): string[] {
+// Matches on M6: all France matches + knockout rounds + opening match
+const M6_PHASES = ["seizième", "huitième", "quart", "demi", "finale", "3e place", "petite"];
+const M6_TEAMS = ["France"];
+// Opening match: Mexico vs host USA on June 11
+const M6_OPENING: [string, string] = ["Mexique", "États-Unis"];
+
+function channels(homeTeam: string, awayTeam: string, phase: string): string[] {
   const ch = ["beIN Sports"];
-  if (homeTeam === "France" || awayTeam === "France") ch.unshift("M6");
+  const phaseL = phase.toLowerCase();
+  const isKnockout = M6_PHASES.some(p => phaseL.includes(p));
+  const involvesFrance = M6_TEAMS.some(t => homeTeam === t || awayTeam === t);
+  const isOpening = (homeTeam === M6_OPENING[0] && awayTeam === M6_OPENING[1])
+                 || (homeTeam === M6_OPENING[1] && awayTeam === M6_OPENING[0]);
+  if (involvesFrance || isKnockout || isOpening) ch.unshift("M6");
   return ch;
 }
 
@@ -94,7 +105,7 @@ function CalendarView({ matches }: { matches: CalendarMatch[] }) {
               <div className="space-y-2">
                 {dayMatches.map((m) => {
                   const cestTime = cestDate(m.kickoff_at);
-                  const chs = channels(m.home_team, m.away_team);
+                  const chs = channels(m.home_team, m.away_team, m.phase);
                   const hasResult = m.home_score !== null && m.away_score !== null;
                   const isFrance = m.home_team === "France" || m.away_team === "France";
                   return (
