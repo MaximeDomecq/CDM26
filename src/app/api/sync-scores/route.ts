@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// French team name → flag emoji
+const FLAG_MAP: Record<string, string> = {
+  "Allemagne": "🇩🇪", "Angleterre": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Autriche": "🇦🇹", "Belgique": "🇧🇪",
+  "Bosnie-Herzégovine": "🇧🇦", "Croatie": "🇭🇷", "Espagne": "🇪🇸", "France": "🇫🇷",
+  "Norvège": "🇳🇴", "Pays-Bas": "🇳🇱", "Portugal": "🇵🇹", "Suède": "🇸🇪",
+  "Suisse": "🇨🇭", "Tchéquie": "🇨🇿", "Turquie": "🇹🇷", "Écosse": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+  "Argentine": "🇦🇷", "Brésil": "🇧🇷", "Colombie": "🇨🇴", "Équateur": "🇪🇨",
+  "Paraguay": "🇵🇾", "Uruguay": "🇺🇾",
+  "Afrique du Sud": "🇿🇦", "Algérie": "🇩🇿", "Cap-Vert": "🇨🇻", "Côte d'Ivoire": "🇨🇮",
+  "Égypte": "🇪🇬", "Ghana": "🇬🇭", "Maroc": "🇲🇦", "RD Congo": "🇨🇩",
+  "Sénégal": "🇸🇳", "Tunisie": "🇹🇳",
+  "Arabie Saoudite": "🇸🇦", "Australie": "🇦🇺", "Corée du Sud": "🇰🇷",
+  "Iran": "🇮🇷", "Irak": "🇮🇶", "Japon": "🇯🇵", "Jordanie": "🇯🇴",
+  "Qatar": "🇶🇦", "Ouzbékistan": "🇺🇿",
+  "Canada": "🇨🇦", "Curaçao": "🇨🇼", "États-Unis": "🇺🇸",
+  "Haïti": "🇭🇹", "Mexique": "🇲🇽", "Panama": "🇵🇦", "Nouvelle-Zélande": "🇳🇿",
+};
+
 // English name (football-data.org) → French name (our DB)
 const TEAM_MAP: Record<string, string> = {
   "Mexico": "Mexique",
@@ -134,8 +152,9 @@ export async function GET(req: NextRequest) {
     if (!error) updated++;
   }
 
-  // Sync player goal tallies from scorers endpoint
+  // Sync player goal tallies — auto-insert unknown scorers
   let playersUpdated = 0;
+  let newPlayersInserted = 0;
   try {
     const scorersRes = await fetch(
       "https://api.football-data.org/v4/competitions/WC/scorers?limit=200",
@@ -143,27 +162,36 @@ export async function GET(req: NextRequest) {
     );
     if (scorersRes.ok) {
       const { scorers } = await scorersRes.json() as {
-        scorers: { player: { name: string }; goals: number }[];
+        scorers: { player: { name: string }; team: { name: string }; goals: number }[];
       };
       const { data: dbPlayers } = await supabase.from("players").select("id, name");
-      for (const dbPlayer of dbPlayers ?? []) {
-        const normalizedDb = normalizeName(dbPlayer.name);
-        const apiScorer = scorers.find((s) => {
-          const normalizedApi = normalizeName(s.player.name);
+      for (const apiScorer of scorers) {
+        if (!apiScorer.goals) continue;
+        const normalizedApi = normalizeName(apiScorer.player.name);
+        const dbMatch = (dbPlayers ?? []).find(p => {
+          const normalizedDb = normalizeName(p.name);
           return normalizedApi.includes(normalizedDb) || normalizedDb.includes(normalizedApi);
         });
-        if (apiScorer !== undefined) {
+        if (dbMatch) {
           const { error } = await supabase
             .from("players")
             .update({ goals: apiScorer.goals })
-            .eq("id", dbPlayer.id);
+            .eq("id", dbMatch.id);
           if (!error) playersUpdated++;
+        } else {
+          const teamFr = TEAM_MAP[apiScorer.team.name];
+          const teamFlag = teamFr ? FLAG_MAP[teamFr] : undefined;
+          if (!teamFr || !teamFlag) continue;
+          const { error } = await supabase
+            .from("players")
+            .insert({ name: apiScorer.player.name, team: teamFr, team_flag: teamFlag, position: "Attaquant", goals: apiScorer.goals });
+          if (!error) newPlayersInserted++;
         }
       }
     }
   } catch {
-    // non-fatal: scorers sync failure doesn't block match sync response
+    // non-fatal
   }
 
-  return NextResponse.json({ ok: true, updated, skipped, total: matches.length, playersUpdated });
+  return NextResponse.json({ ok: true, updated, skipped, total: matches.length, playersUpdated, newPlayersInserted });
 }

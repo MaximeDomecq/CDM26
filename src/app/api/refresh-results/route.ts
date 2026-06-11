@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+// French team name → flag emoji (mirrors teams-list.ts)
+const FLAG_MAP: Record<string, string> = {
+  "Allemagne": "🇩🇪", "Angleterre": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Autriche": "🇦🇹", "Belgique": "🇧🇪",
+  "Bosnie-Herzégovine": "🇧🇦", "Croatie": "🇭🇷", "Espagne": "🇪🇸", "France": "🇫🇷",
+  "Norvège": "🇳🇴", "Pays-Bas": "🇳🇱", "Portugal": "🇵🇹", "Suède": "🇸🇪",
+  "Suisse": "🇨🇭", "Tchéquie": "🇨🇿", "Turquie": "🇹🇷", "Écosse": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+  "Argentine": "🇦🇷", "Brésil": "🇧🇷", "Colombie": "🇨🇴", "Équateur": "🇪🇨",
+  "Paraguay": "🇵🇾", "Uruguay": "🇺🇾",
+  "Afrique du Sud": "🇿🇦", "Algérie": "🇩🇿", "Cap-Vert": "🇨🇻", "Côte d'Ivoire": "🇨🇮",
+  "Égypte": "🇪🇬", "Ghana": "🇬🇭", "Maroc": "🇲🇦", "RD Congo": "🇨🇩",
+  "Sénégal": "🇸🇳", "Tunisie": "🇹🇳",
+  "Arabie Saoudite": "🇸🇦", "Australie": "🇦🇺", "Corée du Sud": "🇰🇷",
+  "Iran": "🇮🇷", "Irak": "🇮🇶", "Japon": "🇯🇵", "Jordanie": "🇯🇴",
+  "Qatar": "🇶🇦", "Ouzbékistan": "🇺🇿",
+  "Canada": "🇨🇦", "Curaçao": "🇨🇼", "États-Unis": "🇺🇸",
+  "Haïti": "🇭🇹", "Mexique": "🇲🇽", "Panama": "🇵🇦", "Nouvelle-Zélande": "🇳🇿",
+};
+
 // English name (football-data.org) → French name (our DB)
 const TEAM_MAP: Record<string, string> = {
   "Mexico": "Mexique", "South Africa": "Afrique du Sud",
@@ -88,6 +106,7 @@ export async function GET(req: NextRequest) {
 
   // ── Buteurs ────────────────────────────────────────────────────────────────
   let playersUpdated = 0;
+  let newPlayersInserted = 0;
   let topScorerId: string | null = null;
   let topGoals = 0;
 
@@ -98,27 +117,44 @@ export async function GET(req: NextRequest) {
     );
     if (scorersRes.ok) {
       const { scorers } = await scorersRes.json() as {
-        scorers: { player: { name: string }; goals: number }[]
+        scorers: { player: { name: string }; team: { name: string }; goals: number }[]
       };
       const { data: dbPlayers } = await supabase.from("players").select("id, name");
-      for (const dbPlayer of dbPlayers ?? []) {
-        const normalizedDb = normalizeName(dbPlayer.name);
-        const apiScorer = scorers.find((s) => {
-          const normalizedApi = normalizeName(s.player.name);
+
+      // Iterate API scorers (not DB players) so no scorer is ever missed
+      for (const apiScorer of scorers) {
+        if (!apiScorer.goals) continue;
+        const normalizedApi = normalizeName(apiScorer.player.name);
+        const dbMatch = (dbPlayers ?? []).find(p => {
+          const normalizedDb = normalizeName(p.name);
           return normalizedApi.includes(normalizedDb) || normalizedDb.includes(normalizedApi);
         });
-        if (apiScorer !== undefined) {
+
+        let matchedId: string | null = null;
+
+        if (dbMatch) {
+          // Known player — update goal count
           const { error } = await supabase
             .from("players")
             .update({ goals: apiScorer.goals })
-            .eq("id", dbPlayer.id);
-          if (!error) {
-            playersUpdated++;
-            if (apiScorer.goals > topGoals) {
-              topGoals = apiScorer.goals;
-              topScorerId = dbPlayer.id;
-            }
-          }
+            .eq("id", dbMatch.id);
+          if (!error) { playersUpdated++; matchedId = dbMatch.id; }
+        } else {
+          // Unknown scorer — auto-insert so they appear in the leaderboard
+          const teamFr = TEAM_MAP[apiScorer.team.name];
+          const teamFlag = teamFr ? FLAG_MAP[teamFr] : undefined;
+          if (!teamFr || !teamFlag) continue;
+          const { data: ins, error } = await supabase
+            .from("players")
+            .insert({ name: apiScorer.player.name, team: teamFr, team_flag: teamFlag, position: "Attaquant", goals: apiScorer.goals })
+            .select("id")
+            .single();
+          if (!error && ins) { newPlayersInserted++; matchedId = ins.id; }
+        }
+
+        if (matchedId && apiScorer.goals > topGoals) {
+          topGoals = apiScorer.goals;
+          topScorerId = matchedId;
         }
       }
 
@@ -130,5 +166,5 @@ export async function GET(req: NextRequest) {
     }
   } catch { /* non-fatal */ }
 
-  return NextResponse.json({ ok: true, updated, skipped, total: matches.length, playersUpdated, topScorerId, topGoals });
+  return NextResponse.json({ ok: true, updated, skipped, total: matches.length, playersUpdated, newPlayersInserted, topScorerId, topGoals });
 }
