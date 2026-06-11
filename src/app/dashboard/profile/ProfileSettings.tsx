@@ -4,7 +4,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTheme } from "@/components/ThemeProvider";
 
-const WC_START = new Date("2026-06-11T19:00:00Z");
+const PROFILE_LOCK = new Date("2026-06-11T18:52:00Z");
+
+function fmtCountdown(sec: number): string {
+  if (sec <= 0) return "00:00";
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (d > 0) return `${d}j ${h}h ${String(m).padStart(2, "0")}m`;
+  if (h > 0) return `${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
 
 type NotifState = "unsupported" | "loading" | "subscribed" | "unsubscribed" | "denied";
 
@@ -24,8 +35,25 @@ export default function ProfileSettings({
   predictedWinner, predictedWinnerFlag,
   topScorerName, topScorerFlag,
 }: Props) {
-  const locked = new Date() >= WC_START;
+  const [locked, setLocked] = useState(() => new Date() >= PROFILE_LOCK);
+  const [secondsToLock, setSecondsToLock] = useState(() =>
+    Math.max(0, Math.floor((PROFILE_LOCK.getTime() - Date.now()) / 1000))
+  );
   const { theme, toggle: toggleTheme } = useTheme();
+
+  useEffect(() => {
+    if (locked) return;
+    const id = setInterval(() => {
+      const diff = Math.floor((PROFILE_LOCK.getTime() - Date.now()) / 1000);
+      if (diff <= 0) {
+        setLocked(true);
+        setSecondsToLock(0);
+      } else {
+        setSecondsToLock(diff);
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [locked]);
 
   const [notifState, setNotifState] = useState<NotifState>("loading");
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
@@ -78,6 +106,22 @@ export default function ProfileSettings({
           <p className="text-sm text-gray-500 dark:text-gray-400">Mon profil</p>
         </div>
       </div>
+
+      {!locked && secondsToLock > 0 && (
+        <div className={`mb-6 flex items-start gap-3 rounded-2xl px-5 py-4 border ${
+          secondsToLock < 300
+            ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/50"
+            : "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/50"
+        }`}>
+          <span className="text-xl">⏱</span>
+          <div>
+            <p className={`font-bold text-sm font-mono ${secondsToLock < 300 ? "text-red-700 dark:text-red-400" : "text-blue-700 dark:text-blue-400"}`}>
+              Verrouillage dans {fmtCountdown(secondsToLock)}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Modifie tes pronostics avant le coup d&apos;envoi</p>
+          </div>
+        </div>
+      )}
 
       {locked && (
         <div className="mb-6 flex items-start gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-2xl px-5 py-4">

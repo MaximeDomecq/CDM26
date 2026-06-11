@@ -20,10 +20,14 @@ export default function EquipePage() {
     });
   }, [supabase]);
 
-  const WC_START = new Date("2026-06-11T19:00:00Z");
+  const PROFILE_LOCK = new Date("2026-06-11T18:52:00Z");
+
+  useEffect(() => {
+    if (new Date() >= PROFILE_LOCK) router.replace("/dashboard/profile");
+  }, [router]);
 
   async function select(name: string, flag: string) {
-    if (new Date() >= WC_START) return;
+    if (new Date() >= PROFILE_LOCK) return;
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;

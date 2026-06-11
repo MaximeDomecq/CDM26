@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { createClient } from "@/lib/supabase/client";
 import { getTier, calculatePoints } from "@/lib/scoring";
 import { flag } from "@/lib/teams";
 import clsx from "clsx";
+
+function fmtCountdown(sec: number): string {
+  if (sec <= 0) return "00:00";
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (d > 0) return `${d}j ${h}h ${String(m).padStart(2, "0")}m`;
+  if (h > 0) return `${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
 
 interface Match {
   id: string;
@@ -51,9 +62,33 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
   const [savedHome, setSavedHome] = useState<number | null>(prediction?.home_score ?? null);
   const [savedAway, setSavedAway] = useState<number | null>(prediction?.away_score ?? null);
 
+  // Real-time countdown + dynamic lock
+  const [secondsLeft, setSecondsLeft] = useState(() => {
+    const kickoff = parseISO(match.kickoff_at);
+    return Math.max(0, Math.floor((kickoff.getTime() - Date.now()) / 1000));
+  });
+  const [dynamicLocked, setDynamicLocked] = useState(
+    () => locked || parseISO(match.kickoff_at) <= new Date()
+  );
+
+  useEffect(() => {
+    if (dynamicLocked) return;
+    const id = setInterval(() => {
+      const kickoff = parseISO(match.kickoff_at);
+      const diff = Math.floor((kickoff.getTime() - Date.now()) / 1000);
+      if (diff <= 0) {
+        setSecondsLeft(0);
+        setDynamicLocked(true);
+      } else {
+        setSecondsLeft(diff);
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [dynamicLocked, match.kickoff_at]);
+
   const hasResult = match.home_score !== null && match.away_score !== null;
   const hasSavedPrediction = savedHome !== null && savedAway !== null;
-  const canEdit = !locked;
+  const canEdit = !dynamicLocked;
 
   const tier = hasResult && hasSavedPrediction
     ? getTier(
@@ -135,6 +170,21 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
           </span>
         )}
       </div>
+
+      {/* Countdown to kickoff */}
+      {!dynamicLocked && !hasResult && (
+        <div className={clsx(
+          "mx-4 mb-2 flex items-center justify-center gap-2 py-1.5 rounded-xl text-xs font-bold font-mono",
+          secondsLeft < 60
+            ? "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400"
+            : secondsLeft < 3600
+            ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
+            : "bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+        )}>
+          <span>⏱</span>
+          <span>Verrouillage dans {fmtCountdown(secondsLeft)}</span>
+        </div>
+      )}
 
       {/* Teams + score */}
       <div className="px-4 pb-4">
