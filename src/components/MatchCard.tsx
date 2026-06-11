@@ -72,6 +72,7 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
 
   async function save() {
     if (home === "" || away === "") return;
+    if (parseISO(match.kickoff_at) <= new Date()) return;
     setSaving(true);
     const supabase = createClient();
     const h = parseInt(home);

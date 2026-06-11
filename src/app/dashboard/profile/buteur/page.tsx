@@ -30,7 +30,10 @@ export default function ButeurPage() {
     });
   }, [supabase]);
 
+  const WC_START = new Date("2026-06-11T19:00:00Z");
+
   async function select(playerId: string) {
+    if (new Date() >= WC_START) return;
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
