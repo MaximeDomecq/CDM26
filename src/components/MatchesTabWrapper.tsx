@@ -84,7 +84,7 @@ function channels(homeTeam: string, awayTeam: string, phase: string): string[] {
 
 function CalendarView({ matches }: { matches: CalendarMatch[] }) {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"tous" | "france" | "m6">("tous");
+  const [filter, setFilter] = useState<"tous" | "france">("tous");
 
   if (matches.length === 0) {
     return <p className="text-gray-400 dark:text-gray-600">Aucun match programmé.</p>;
@@ -94,7 +94,6 @@ function CalendarView({ matches }: { matches: CalendarMatch[] }) {
     const q = search.toLowerCase();
     if (q && !m.home_team.toLowerCase().includes(q) && !m.away_team.toLowerCase().includes(q)) return false;
     if (filter === "france") return m.home_team === "France" || m.away_team === "France";
-    if (filter === "m6") return channels(m.home_team, m.away_team, m.phase).includes("M6");
     return true;
   });
 
@@ -117,7 +116,7 @@ function CalendarView({ matches }: { matches: CalendarMatch[] }) {
           className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
         <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl flex-shrink-0">
-          {(["tous", "france", "m6"] as const).map(f => (
+          {(["tous", "france"] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -127,7 +126,7 @@ function CalendarView({ matches }: { matches: CalendarMatch[] }) {
                   : "text-gray-500 dark:text-gray-400"
               }`}
             >
-              {f === "tous" ? "Tous" : f === "france" ? "🇫🇷 France" : "M6"}
+              {f === "tous" ? "Tous" : "🇫🇷 France"}
             </button>
           ))}
         </div>
@@ -199,11 +198,11 @@ function CalendarView({ matches }: { matches: CalendarMatch[] }) {
                         </div>
                         <div className="text-xs text-gray-400 dark:text-gray-600 mt-0.5">{m.phase}</div>
                       </div>
-                      <div className="flex-shrink-0 flex items-center gap-1.5">
+                      <div className="flex-shrink-0 flex flex-col items-end gap-1 w-10">
                         {chs.map((ch) => (
                           <span
                             key={ch}
-                            className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                            className={`text-[11px] font-bold px-1.5 py-0.5 rounded w-full text-center ${
                               ch === "M6"
                                 ? "bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-400"
                                 : "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400"
