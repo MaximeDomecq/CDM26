@@ -13,6 +13,8 @@ interface LeaderboardEntry {
   topScorerBonus: number;
   winnerBonus: number;
   predictionsCount: number;
+  exactCount: number;
+  correctCount: number;
 }
 
 interface Props {
@@ -69,7 +71,8 @@ export default function LeagueTabs({
               <tr className="border-b border-gray-100 dark:border-gray-800">
                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 w-10">#</th>
                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Joueur</th>
-                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Pronos</th>
+                <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 hidden sm:table-cell">Exacts</th>
+                <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 hidden sm:table-cell">Bons</th>
                 <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Points</th>
               </tr>
             </thead>
@@ -90,13 +93,30 @@ export default function LeagueTabs({
                     : <span className="font-bold text-gray-400 dark:text-gray-600 text-sm">{i + 1}</span>}
                   </td>
                   <td className="px-4 py-3.5 font-semibold text-gray-900 dark:text-white">
-                    {entry.displayName}
-                    {entry.userId === currentUserId && (
-                      <span className="ml-2 text-xs text-brand-500 dark:text-brand-400 font-medium">(vous)</span>
-                    )}
+                    <div>
+                      {entry.displayName}
+                      {entry.userId === currentUserId && (
+                        <span className="ml-2 text-xs text-brand-500 dark:text-brand-400 font-medium">(vous)</span>
+                      )}
+                    </div>
+                    <div className="flex gap-2 mt-0.5 sm:hidden">
+                      {entry.exactCount > 0 && (
+                        <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🎯 {entry.exactCount} exact{entry.exactCount > 1 ? "s" : ""}</span>
+                      )}
+                      {entry.correctCount > 0 && (
+                        <span className="text-[11px] font-semibold text-brand-500 dark:text-brand-400">✓ {entry.correctCount} bon{entry.correctCount > 1 ? "s" : ""}</span>
+                      )}
+                    </div>
                   </td>
-                  <td className="px-4 py-3.5 text-center text-gray-500 dark:text-gray-400 text-sm">
-                    {entry.predictionsCount}
+                  <td className="px-3 py-3.5 text-center hidden sm:table-cell">
+                    {entry.exactCount > 0
+                      ? <span className="font-black text-emerald-600 dark:text-emerald-400 text-sm">🎯 {entry.exactCount}</span>
+                      : <span className="text-gray-300 dark:text-gray-700 text-sm">—</span>}
+                  </td>
+                  <td className="px-3 py-3.5 text-center hidden sm:table-cell">
+                    {entry.correctCount > 0
+                      ? <span className="font-bold text-brand-500 dark:text-brand-400 text-sm">✓ {entry.correctCount}</span>
+                      : <span className="text-gray-300 dark:text-gray-700 text-sm">—</span>}
                   </td>
                   <td className="px-4 py-3.5 text-right">
                     <span className="font-black text-brand-600 dark:text-brand-400 text-base">{entry.points}</span>
@@ -112,7 +132,7 @@ export default function LeagueTabs({
               ))}
               {leaderboard.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-gray-400 dark:text-gray-600 text-sm">
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400 dark:text-gray-600 text-sm">
                     Aucun membre pour l&apos;instant.
                   </td>
                 </tr>

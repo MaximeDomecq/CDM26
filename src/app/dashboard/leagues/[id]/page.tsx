@@ -104,22 +104,31 @@ export default async function LeagueDetailPage({
     const preds = (allPredictions ?? []).filter(
       (p) => p.user_id === member.userId && finishedMatchIds.has(p.match_id)
     );
-    const matchPoints = preds.reduce((sum, pred) => {
+    let matchPoints = 0;
+    let exactCount = 0;
+    let correctCount = 0;
+    for (const pred of preds) {
       const match = matchMap.get(pred.match_id);
-      if (!match) return sum;
+      if (!match) continue;
       const exactList = exactPredictors.get(pred.match_id) ?? [];
       const uniqueExact = exactList.length === 1 && exactList[0] === pred.user_id;
-      return sum + calculatePoints(
+      matchPoints += calculatePoints(
         { home_score: pred.home_score, away_score: pred.away_score },
         { home_score: match.home_score!, away_score: match.away_score! },
         uniqueExact
       );
-    }, 0);
+      const tier = getTier(
+        { home_score: pred.home_score, away_score: pred.away_score },
+        { home_score: match.home_score!, away_score: match.away_score! }
+      );
+      if (tier === "exact") exactCount++;
+      if (tier !== "wrong") correctCount++;
+    }
     const player = member.topScorerId ? playerMap.get(member.topScorerId) : null;
     const topScorerBonus = player ? calculateTopScorerBonus(player.goals, player.won_golden_boot) : 0;
     const winnerBonus = tournamentWinner && member.predictedWinner === tournamentWinner ? 20 : 0;
     const points = matchPoints + topScorerBonus + winnerBonus;
-    return { ...member, points, matchPoints, topScorerBonus, winnerBonus, predictionsCount: preds.length };
+    return { ...member, points, matchPoints, topScorerBonus, winnerBonus, predictionsCount: preds.length, exactCount, correctCount };
   });
   leaderboard.sort((a, b) => b.points - a.points);
 
