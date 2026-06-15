@@ -203,8 +203,33 @@ const TIER_STYLE: Record<ScoreTier, string> = {
 };
 
 function ResultsView({ matches, predictions }: { matches: Match[]; predictions: Prediction[] }) {
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"date" | "pts">("date");
+
   const finished = matches.filter(m => m.home_score !== null && m.away_score !== null);
   const predMap = new Map(predictions.map(p => [p.match_id, p]));
+
+  const enriched = finished.map(m => {
+    const pred = predMap.get(m.id);
+    const result = { home_score: m.home_score!, away_score: m.away_score! };
+    const tier = pred ? getTier(pred, result) : null;
+    const pts = pred ? calculatePoints(pred, result) : 0;
+    return { ...m, pred, tier, pts };
+  });
+
+  const totalPoints = enriched.reduce((s, m) => s + m.pts, 0);
+
+  const filtered = enriched.filter(m =>
+    !search ||
+    m.home_team.toLowerCase().includes(search.toLowerCase()) ||
+    m.away_team.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const sorted = [...filtered].sort((a, b) =>
+    sort === "pts"
+      ? b.pts - a.pts || new Date(b.kickoff_at).getTime() - new Date(a.kickoff_at).getTime()
+      : new Date(b.kickoff_at).getTime() - new Date(a.kickoff_at).getTime()
+  );
 
   if (finished.length === 0) {
     return (
@@ -214,89 +239,92 @@ function ResultsView({ matches, predictions }: { matches: Match[]; predictions: 
     );
   }
 
-  let totalPoints = 0;
-  for (const m of finished) {
-    const pred = predMap.get(m.id);
-    if (pred && m.home_score !== null && m.away_score !== null) {
-      totalPoints += calculatePoints(pred, { home_score: m.home_score, away_score: m.away_score });
-    }
-  }
-
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          {finished.length} match{finished.length > 1 ? "s" : ""} terminé{finished.length > 1 ? "s" : ""}
+      {/* Header */}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">
+          {finished.length} match{finished.length > 1 ? "s" : ""}
         </p>
-        <div className="px-3 py-1.5 rounded-xl bg-wc-header text-white text-sm font-black">
-          {totalPoints} pts au total
+        <div className="px-3 py-1.5 rounded-xl bg-wc-header text-white text-sm font-black flex-shrink-0">
+          {totalPoints} pts
         </div>
       </div>
-      <div className="flex flex-col gap-3">
-        {finished.map(m => {
-          const pred = predMap.get(m.id);
-          const result = { home_score: m.home_score!, away_score: m.away_score! };
-          const tier = pred ? getTier(pred, result) : null;
-          const pts = pred ? calculatePoints(pred, result) : null;
 
-          return (
-            <div
-              key={m.id}
-              className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 px-5 py-4"
+      {/* Search + sort */}
+      <div className="flex gap-2 mb-4">
+        <input
+          type="text"
+          placeholder="Rechercher une équipe…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+        />
+        <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl flex-shrink-0">
+          {(["date", "pts"] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setSort(s)}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                sort === s
+                  ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400"
+              }`}
             >
-              {/* Match row */}
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-xs text-gray-400 dark:text-gray-600 font-semibold uppercase tracking-wide w-16 flex-shrink-0">
-                  {m.phase}
-                </span>
-                <div className="flex-1 flex items-center justify-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xl">{flag(m.home_team)}</span>
-                    <span className="font-bold text-gray-900 dark:text-white text-sm">{m.home_team}</span>
-                  </div>
-                  <span className="font-black text-lg text-gray-900 dark:text-white px-3 py-1 rounded-lg bg-gray-50 dark:bg-gray-800 font-mono">
-                    {m.home_score} – {m.away_score}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-gray-900 dark:text-white text-sm">{m.away_team}</span>
-                    <span className="text-xl">{flag(m.away_team)}</span>
-                  </div>
-                </div>
-              </div>
+              {s === "date" ? "Date" : "Points"}
+            </button>
+          ))}
+        </div>
+      </div>
 
-              {/* Prediction row */}
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
-                {pred ? (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400 dark:text-gray-600">Ton prono :</span>
-                      <span className="font-black text-gray-700 dark:text-gray-300 font-mono text-sm">
-                        {pred.home_score} – {pred.away_score}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {tier && (
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${TIER_STYLE[tier]}`}>
-                          {TIER_LABEL[tier]}
-                        </span>
-                      )}
-                      <span className={`text-sm font-black px-3 py-1 rounded-xl ${
-                        pts === 5 ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400"
-                        : pts! >= 3 ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400"
-                        : pts! >= 1 ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"
-                      }`}>
-                        {pts} pt{pts !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <span className="text-xs text-gray-300 dark:text-gray-700 italic">Aucun pronostic</span>
-                )}
-              </div>
+      {/* Results list */}
+      <div className="flex flex-col gap-2">
+        {sorted.length === 0 && (
+          <p className="text-gray-400 dark:text-gray-600 text-sm text-center py-6">Aucun résultat trouvé.</p>
+        )}
+        {sorted.map(m => (
+          <div
+            key={m.id}
+            className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3 flex items-center gap-3"
+          >
+            {/* Teams + score */}
+            <div className="flex-1 flex items-center gap-1.5 min-w-0">
+              <span className="text-lg flex-shrink-0">{flag(m.home_team)}</span>
+              <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">{m.home_team}</span>
+              <span className="font-black text-gray-900 dark:text-white font-mono text-sm flex-shrink-0 px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-gray-800 mx-1">
+                {m.home_score}–{m.away_score}
+              </span>
+              <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">{m.away_team}</span>
+              <span className="text-lg flex-shrink-0">{flag(m.away_team)}</span>
             </div>
-          );
-        })}
+
+            {/* Prono + pts */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {m.pred ? (
+                <>
+                  <span className="font-mono text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">
+                    {m.pred.home_score}–{m.pred.away_score}
+                  </span>
+                  {m.tier && m.tier !== "wrong" && (
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full hidden sm:inline ${TIER_STYLE[m.tier]}`}>
+                      {TIER_LABEL[m.tier]}
+                    </span>
+                  )}
+                  <span className={`text-sm font-black px-2.5 py-1 rounded-lg ${
+                    m.pts >= 5 ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400"
+                    : m.pts >= 3 ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400"
+                    : m.pts >= 1 ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"
+                  }`}>
+                    {m.pts > 0 ? `+${m.pts}` : "0"} pt{m.pts !== 1 ? "s" : ""}
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs text-gray-300 dark:text-gray-700 italic">—</span>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
