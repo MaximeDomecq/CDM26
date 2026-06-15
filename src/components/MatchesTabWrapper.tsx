@@ -83,16 +83,19 @@ function channels(homeTeam: string, awayTeam: string, phase: string): string[] {
 }
 
 function CalendarView({ matches }: { matches: CalendarMatch[] }) {
-  const [search, setSearch] = useState("");
+  const [period, setPeriod] = useState<"avenir" | "passe">("avenir");
   const [filter, setFilter] = useState<"tous" | "france">("tous");
+
+  const now = new Date();
 
   if (matches.length === 0) {
     return <p className="text-gray-400 dark:text-gray-600">Aucun match programmé.</p>;
   }
 
   const filtered = matches.filter(m => {
-    const q = search.toLowerCase();
-    if (q && !m.home_team.toLowerCase().includes(q) && !m.away_team.toLowerCase().includes(q)) return false;
+    const isPast = cestDate(m.kickoff_at) < now;
+    if (period === "avenir" && isPast) return false;
+    if (period === "passe" && !isPast) return false;
     if (filter === "france") return m.home_team === "France" || m.away_team === "France";
     return true;
   });
@@ -106,16 +109,24 @@ function CalendarView({ matches }: { matches: CalendarMatch[] }) {
 
   return (
     <div>
-      {/* Search + filter */}
+      {/* Période + filtre */}
       <div className="flex gap-2 mb-5">
-        <input
-          type="text"
-          placeholder="Rechercher une équipe…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-        />
-        <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl flex-shrink-0">
+        <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+          {(["avenir", "passe"] as const).map(p => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                period === p
+                  ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400"
+              }`}
+            >
+              {p === "avenir" ? "À venir" : "Passé"}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
           {(["tous", "france"] as const).map(f => (
             <button
               key={f}
@@ -219,10 +230,6 @@ function CalendarView({ matches }: { matches: CalendarMatch[] }) {
             </section>
           );
         })}
-      </div>
-      <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl text-xs text-amber-700 dark:text-amber-400">
-        <strong>Note :</strong> Les matchs sur M6 seront confirmés officiellement par le Groupe M6. Seuls les matchs de la France sont indiqués avec certitude sur M6.
-        beIN Sports diffuse l&apos;intégralité des 104 matchs (abonnement requis).
       </div>
     </div>
   );
