@@ -99,6 +99,20 @@ export default async function DashboardPage() {
         )}
       </div>
 
+      {/* Navigation */}
+      <div className="grid grid-cols-2 gap-3">
+        <NavCard
+          href="/dashboard/matches"
+          emoji="⚽"
+          title="Pronostics"
+          badge={totalMatches - predictedCount > 0 ? `${totalMatches - predictedCount} à faire` : undefined}
+          badgeGreen={predictedCount === totalMatches}
+        />
+        <NavCard href="/dashboard/leagues" emoji="🏆" title="Mes ligues" />
+        <NavCard href="/dashboard/groupes" emoji="📊" title="Groupes" />
+        <NavCard href="/dashboard/profile" emoji="🎯" title="Mon profil" />
+      </div>
+
       {/* Upcoming matches */}
       {upcomingMatches.length > 0 && (
         <div>
@@ -135,19 +149,6 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="grid grid-cols-2 gap-3">
-        <NavCard
-          href="/dashboard/matches"
-          emoji="⚽"
-          title="Pronostics"
-          badge={totalMatches - predictedCount > 0 ? `${totalMatches - predictedCount} à faire` : undefined}
-          badgeGreen={predictedCount === totalMatches}
-        />
-        <NavCard href="/dashboard/leagues" emoji="🏆" title="Mes ligues" />
-        <NavCard href="/dashboard/groupes" emoji="📊" title="Groupes" />
-        <NavCard href="/dashboard/profile" emoji="🎯" title="Mon profil" />
-      </div>
     </div>
   );
 }
