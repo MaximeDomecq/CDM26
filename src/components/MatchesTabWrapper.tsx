@@ -343,10 +343,10 @@ export default function MatchesTabWrapper({
             Live
           </span>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl">
           <TabBtn active={tab === "pronos"} onClick={() => setTab("pronos")}>⚽ Pronostics</TabBtn>
           <TabBtn active={tab === "resultats"} onClick={() => setTab("resultats")}>
-            🏆 Résultats{finishedCount > 0 && <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400">{finishedCount}</span>}
+            🏆 Résultats{finishedCount > 0 && <span className="ml-1 text-[10px] font-bold px-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400">{finishedCount}</span>}
           </TabBtn>
           <TabBtn active={tab === "calendrier"} onClick={() => setTab("calendrier")}>📅 Calendrier</TabBtn>
         </div>
@@ -354,7 +354,7 @@ export default function MatchesTabWrapper({
 
       {tab === "pronos" ? (
         <MatchesClient
-          matches={matches}
+          matches={matches.filter(m => m.home_score === null)}
           predictions={predictions}
           userId={userId}
           favoriteTeam={favoriteTeam}
@@ -374,10 +374,10 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+      className={`flex-1 py-2 px-2 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-1 ${
         active
-          ? "bg-wc-header text-white shadow-sm"
-          : "bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+          ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
+          : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
       }`}
     >
       {children}
