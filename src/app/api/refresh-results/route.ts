@@ -32,7 +32,7 @@ const TEAM_MAP: Record<string, string> = {
   "Scotland": "Écosse", "Turkey": "Turquie", "Türkiye": "Turquie",
   "Argentina": "Argentine", "Brazil": "Brésil", "Colombia": "Colombie",
   "Ecuador": "Équateur", "Paraguay": "Paraguay", "Uruguay": "Uruguay",
-  "Algeria": "Algérie", "Cape Verde": "Cap-Vert",
+  "Algeria": "Algérie", "Cape Verde": "Cap-Vert", "Cape Verde Islands": "Cap-Vert",
   "Ivory Coast": "Côte d'Ivoire", "Côte d'Ivoire": "Côte d'Ivoire",
   "Egypt": "Égypte", "Ghana": "Ghana", "Morocco": "Maroc",
   "DR Congo": "RD Congo", "Democratic Republic of Congo": "RD Congo", "Congo DR": "RD Congo",

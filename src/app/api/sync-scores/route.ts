@@ -52,7 +52,7 @@ const TEAM_MAP: Record<string, string> = {
   "Paraguay": "Paraguay",
   "Uruguay": "Uruguay",
   "Algeria": "Algérie",
-  "Cape Verde": "Cap-Vert",
+  "Cape Verde": "Cap-Vert", "Cape Verde Islands": "Cap-Vert",
   "Ivory Coast": "Côte d'Ivoire",
   "Côte d'Ivoire": "Côte d'Ivoire",
   "Egypt": "Égypte",
