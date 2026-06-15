@@ -83,12 +83,23 @@ function channels(homeTeam: string, awayTeam: string, phase: string): string[] {
 }
 
 function CalendarView({ matches }: { matches: CalendarMatch[] }) {
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"tous" | "france" | "m6">("tous");
+
   if (matches.length === 0) {
     return <p className="text-gray-400 dark:text-gray-600">Aucun match programmé.</p>;
   }
 
+  const filtered = matches.filter(m => {
+    const q = search.toLowerCase();
+    if (q && !m.home_team.toLowerCase().includes(q) && !m.away_team.toLowerCase().includes(q)) return false;
+    if (filter === "france") return m.home_team === "France" || m.away_team === "France";
+    if (filter === "m6") return channels(m.home_team, m.away_team, m.phase).includes("M6");
+    return true;
+  });
+
   const byDay: Record<string, CalendarMatch[]> = {};
-  for (const m of matches) {
+  for (const m of filtered) {
     const key = format(cestDate(m.kickoff_at), "yyyy-MM-dd");
     if (!byDay[key]) byDay[key] = [];
     byDay[key].push(m);
@@ -96,6 +107,33 @@ function CalendarView({ matches }: { matches: CalendarMatch[] }) {
 
   return (
     <div>
+      {/* Search + filter */}
+      <div className="flex gap-2 mb-5">
+        <input
+          type="text"
+          placeholder="Rechercher une équipe…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+        />
+        <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl flex-shrink-0">
+          {(["tous", "france", "m6"] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                filter === f
+                  ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400"
+              }`}
+            >
+              {f === "tous" ? "Tous" : f === "france" ? "🇫🇷 France" : "M6"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Legend */}
       <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
         <span className="flex items-center gap-1.5">
           <span className="inline-block px-2 py-0.5 rounded bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-400 font-semibold text-[11px]">M6</span>
@@ -106,6 +144,11 @@ function CalendarView({ matches }: { matches: CalendarMatch[] }) {
           Tous les matchs (abonnement)
         </span>
       </div>
+
+      {filtered.length === 0 && (
+        <p className="text-gray-400 dark:text-gray-600 text-sm text-center py-8">Aucun match trouvé.</p>
+      )}
+
       <div className="space-y-6">
         {Object.entries(byDay).map(([dateKey, dayMatches]) => {
           const label = format(parseISO(dateKey), "EEEE d MMMM yyyy", { locale: fr });
