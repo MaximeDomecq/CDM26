@@ -1,8 +1,18 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { format, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
 import { flag } from "@/lib/teams";
+
+function fmtTime(utcIso: string) {
+  return new Date(utcIso).toLocaleTimeString("fr-FR", {
+    timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+}
+
+function fmtDate(utcIso: string) {
+  return new Date(utcIso).toLocaleDateString("fr-FR", {
+    timeZone: "Europe/Paris", day: "numeric", month: "short",
+  });
+}
 
 export const revalidate = 0;
 
@@ -27,12 +37,11 @@ export default async function DashboardPage() {
   const completionPct = totalMatches > 0 ? Math.round((predictedCount / totalMatches) * 100) : 0;
 
   const upcomingMatches = (matches ?? [])
-    .filter((m) => parseISO(m.kickoff_at) > now)
+    .filter((m) => new Date(m.kickoff_at) > now)
     .slice(0, 4);
 
   const liveOrRecentMatches = (matches ?? []).filter((m) => {
-    const k = parseISO(m.kickoff_at);
-    const diff = (now.getTime() - k.getTime()) / 1000 / 60;
+    const diff = (now.getTime() - new Date(m.kickoff_at).getTime()) / 1000 / 60;
     return diff >= 0 && diff <= 120;
   });
 
@@ -125,7 +134,6 @@ export default async function DashboardPage() {
           <div className="space-y-2">
             {upcomingMatches.map((m) => {
               const hasPred = predictionSet.has(m.id);
-              const kickoff = parseISO(m.kickoff_at);
               return (
                 <Link
                   key={m.id}
@@ -139,8 +147,8 @@ export default async function DashboardPage() {
                     </span>
                   </div>
                   <div className="text-right flex-shrink-0 ml-3">
-                    <div className="text-xs text-gray-400 dark:text-gray-600">{format(kickoff, "d MMM", { locale: fr })}</div>
-                    <div className="text-xs font-bold text-gray-700 dark:text-gray-300">{format(kickoff, "HH:mm")}</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-600">{fmtDate(m.kickoff_at)}</div>
+                    <div className="text-xs font-bold text-gray-700 dark:text-gray-300">{fmtTime(m.kickoff_at)}</div>
                   </div>
                 </Link>
               );
