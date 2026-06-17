@@ -6,6 +6,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { TEAMS } from "@/lib/teams-list";
 
+const PROFILE_LOCK = new Date("2026-06-11T18:52:00Z");
+
 export default function VainqueurPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -19,8 +21,6 @@ export default function VainqueurPage() {
         .then(({ data }) => { if (data) setCurrent((data as { predicted_winner: string | null }).predicted_winner); });
     });
   }, [supabase]);
-
-  const PROFILE_LOCK = new Date("2026-06-11T18:52:00Z");
 
   useEffect(() => {
     if (new Date() >= PROFILE_LOCK) router.replace("/dashboard/profile");

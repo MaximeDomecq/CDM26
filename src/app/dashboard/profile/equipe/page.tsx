@@ -6,6 +6,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { TEAMS } from "@/lib/teams-list";
 
+const PROFILE_LOCK = new Date("2026-06-11T18:52:00Z");
+
 export default function EquipePage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -19,8 +21,6 @@ export default function EquipePage() {
         .then(({ data }) => { if (data) setCurrent((data as { favorite_team: string | null }).favorite_team); });
     });
   }, [supabase]);
-
-  const PROFILE_LOCK = new Date("2026-06-11T18:52:00Z");
 
   useEffect(() => {
     if (new Date() >= PROFILE_LOCK) router.replace("/dashboard/profile");

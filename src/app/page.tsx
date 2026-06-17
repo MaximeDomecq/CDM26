@@ -244,7 +244,7 @@ export default function LandingPage() {
                 { icon: "⬆️", text: <>Appuyez sur l&apos;icône <strong className="text-white">Partager</strong> en bas de l&apos;écran</> },
                 { icon: "➕", text: <>Sélectionnez <strong className="text-white">&ldquo;Sur l&apos;écran d&apos;accueil&rdquo;</strong></> },
                 { icon: "✅", text: <>Appuyez sur <strong className="text-white">Ajouter</strong> en haut à droite</> },
-              ].map(({ icon, text }, i) => (
+              ].map(({ text }, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <span className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
                     {i + 1}

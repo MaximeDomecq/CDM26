@@ -9,6 +9,8 @@ interface Player {
   id: string; name: string; team: string; team_flag: string; position: string;
 }
 
+const PROFILE_LOCK = new Date("2026-06-11T18:52:00Z");
+
 export default function ButeurPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -29,8 +31,6 @@ export default function ButeurPage() {
       });
     });
   }, [supabase]);
-
-  const PROFILE_LOCK = new Date("2026-06-11T18:52:00Z");
 
   useEffect(() => {
     if (new Date() >= PROFILE_LOCK) router.replace("/dashboard/profile");
