@@ -216,6 +216,83 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── MOBILE APP ── */}
+      <section className="py-24 px-4 max-w-4xl mx-auto">
+        <div className="text-center mb-14">
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#f59e0b" }}>Application mobile</p>
+          <h2 className="text-3xl sm:text-4xl font-black">Installez l&apos;app en 10 secondes</h2>
+          <p className="text-white/50 mt-4 text-base max-w-lg mx-auto leading-relaxed">
+            Pas besoin de l&apos;App Store. Ajoutez CDM 2026 directement sur votre écran d&apos;accueil comme une vraie application.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-5">
+          {/* iOS */}
+          <div className="rounded-2xl p-6 border" style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: "rgba(255,255,255,0.08)" }}>
+                🍎
+              </div>
+              <div>
+                <div className="font-black text-base">iPhone · iPad</div>
+                <div className="text-xs text-white/40">Safari uniquement</div>
+              </div>
+            </div>
+            <ol className="space-y-4">
+              {[
+                { icon: "🌐", text: "Ouvrez cette page dans Safari" },
+                { icon: "⬆️", text: <>Appuyez sur l&apos;icône <strong className="text-white">Partager</strong> en bas de l&apos;écran</> },
+                { icon: "➕", text: <>Sélectionnez <strong className="text-white">&ldquo;Sur l&apos;écran d&apos;accueil&rdquo;</strong></> },
+                { icon: "✅", text: <>Appuyez sur <strong className="text-white">Ajouter</strong> en haut à droite</> },
+              ].map(({ icon, text }, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
+                    {i + 1}
+                  </span>
+                  <span className="text-sm text-white/60 leading-relaxed pt-0.5">{text}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* Android */}
+          <div className="rounded-2xl p-6 border" style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: "rgba(255,255,255,0.08)" }}>
+                🤖
+              </div>
+              <div>
+                <div className="font-black text-base">Android</div>
+                <div className="text-xs text-white/40">Chrome recommandé</div>
+              </div>
+            </div>
+            <ol className="space-y-4">
+              {[
+                { text: "Ouvrez cette page dans Chrome" },
+                { text: <>Appuyez sur le menu <strong className="text-white">⋮</strong> en haut à droite</> },
+                { text: <>Sélectionnez <strong className="text-white">&ldquo;Ajouter à l&apos;écran d&apos;accueil&rdquo;</strong></> },
+                { text: <>Appuyez sur <strong className="text-white">Ajouter</strong> pour confirmer</> },
+              ].map(({ text }, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
+                    {i + 1}
+                  </span>
+                  <span className="text-sm text-white/60 leading-relaxed pt-0.5">{text}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        {/* Result callout */}
+        <div className="mt-6 rounded-2xl px-6 py-4 flex items-center gap-4 border" style={{ background: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.2)" }}>
+          <span className="text-3xl flex-shrink-0">📱</span>
+          <p className="text-sm text-white/70 leading-relaxed">
+            L&apos;app s&apos;ouvre en plein écran, sans barre de navigation — exactement comme une application native. Notifications, mise à jour automatique des scores incluses.
+          </p>
+        </div>
+      </section>
+
       {/* ── SCORING ── */}
       <section className="py-24 px-4 max-w-4xl mx-auto">
         <div className="text-center mb-14">
@@ -272,10 +349,10 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto">
           <div className="text-6xl mb-6" style={{ filter: "drop-shadow(0 0 24px rgba(245,158,11,0.5))" }}>⚽</div>
           <h2 className="text-3xl sm:text-4xl font-black mb-4">
-            Le tournoi commence le{" "}
-            <span style={{ color: "#f59e0b" }}>11 juin 2026</span>
+            La Coupe du Monde{" "}
+            <span style={{ color: "#f59e0b" }}>est en cours</span>
           </h2>
-          <p className="text-white/50 mb-10 text-lg">Le coup d&apos;envoi approche — prépare tes pronostics !</p>
+          <p className="text-white/50 mb-10 text-lg">Les matchs s&apos;enchaînent — rejoins maintenant et pronostique !</p>
           <Link
             href="/auth/register"
             className="inline-block px-10 py-5 rounded-2xl font-black text-xl transition-all hover:scale-105 active:scale-95"
