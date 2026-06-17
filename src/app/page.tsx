@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const FLAGS = [
   "🇲🇽","🇿🇦","🇰🇷","🇨🇿","🇧🇦","🇳🇱","🇩🇪","🏴󠁧󠁢󠁥󠁮󠁧󠁿","🇦🇹","🇧🇪","🇭🇷","🇪🇸","🇫🇷","🇳🇴",
@@ -42,6 +42,7 @@ const SCORES = [
 
 export default function LandingPage() {
   const marqueeRef = useRef<HTMLDivElement>(null);
+  const [installOpen, setInstallOpen] = useState(true);
 
   useEffect(() => {
     const el = marqueeRef.current;
@@ -103,14 +104,20 @@ export default function LandingPage() {
           <div className="text-8xl sm:text-9xl drop-shadow-2xl" style={{ filter: "drop-shadow(0 0 40px rgba(245,158,11,0.5))" }}>🏆</div>
         </div>
 
-        {/* Badge */}
-        <div className="flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full border text-xs font-bold uppercase tracking-widest"
-          style={{ borderColor: "rgba(245,158,11,0.4)", color: "#f59e0b", background: "rgba(245,158,11,0.08)" }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-          FIFA World Cup 2026 · Canada · USA · Mexique
+        {/* Badges */}
+        <div className="flex items-center gap-3 mb-5 flex-wrap justify-center">
+          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-bold uppercase tracking-widest"
+            style={{ borderColor: "rgba(245,158,11,0.4)", color: "#f59e0b", background: "rgba(245,158,11,0.08)" }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            En cours · CDM 2026
+          </div>
+          <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full border text-xs font-bold"
+            style={{ borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.04)" }}>
+            📱 Application mobile gratuite
+          </div>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-center leading-[1.05] tracking-tight mb-6 max-w-4xl">
+        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-center leading-[1.05] tracking-tight mb-5 max-w-4xl">
           Pronostique la{" "}
           <span style={{ background: "linear-gradient(135deg, #f59e0b, #fcd34d, #d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             Coupe du Monde
@@ -118,47 +125,79 @@ export default function LandingPage() {
           {" "}avec tes amis
         </h1>
 
-        <p className="text-white/60 text-lg text-center max-w-xl mb-10 leading-relaxed">
-          48 nations. 104 matchs. 1 trophée.<br />
-          Créez vos ligues, pronostiquez chaque résultat et grimpez au classement.
+        <p className="text-white/50 text-base text-center max-w-md mb-8 leading-relaxed">
+          104 matchs à pronostiquer. Ligues privées entre amis.<br />Scores mis à jour en temps réel.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-3 mb-8">
           <Link href="/auth/register"
-            className="px-8 py-4 rounded-2xl font-black text-lg transition-all hover:scale-105 active:scale-95 shadow-2xl"
+            className="px-8 py-4 rounded-2xl font-black text-base transition-all hover:scale-105 active:scale-95 shadow-2xl"
             style={{
               background: "linear-gradient(135deg, #f59e0b 0%, #fcd34d 50%, #d97706 100%)",
               color: "#080e1a",
-              boxShadow: "0 0 40px rgba(245,158,11,0.4)",
+              boxShadow: "0 0 40px rgba(245,158,11,0.35)",
             }}>
             Créer mon compte
           </Link>
           <Link href="/auth/login"
-            className="px-8 py-4 rounded-2xl font-semibold text-base border transition-all hover:bg-white/5"
-            style={{ borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.7)" }}>
+            className="px-8 py-4 rounded-2xl font-semibold text-sm border transition-all hover:bg-white/5"
+            style={{ borderColor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)" }}>
             J&apos;ai déjà un compte →
           </Link>
         </div>
 
-        {/* Stats bar */}
-        <div className="mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-          {[
-            { val: "48", label: "nations qualifiées" },
-            { val: "104", label: "matchs au total" },
-            { val: "12", label: "groupes" },
-            { val: "32", label: "équipes en phases finales" },
-          ].map(({ val, label }) => (
-            <div key={val} className="text-center">
-              <div className="text-3xl font-black" style={{ color: "#f59e0b" }}>{val}</div>
-              <div className="text-xs text-white/40 font-semibold uppercase tracking-wider mt-0.5">{label}</div>
+        {/* Install accordion */}
+        <div className="w-full max-w-sm">
+          <button
+            onClick={() => setInstallOpen(!installOpen)}
+            className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all"
+            style={{ borderColor: installOpen ? "rgba(245,158,11,0.25)" : "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)" }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-lg">📲</span>
+              <span className="font-semibold text-sm text-white/80">Installer l&apos;app sur mobile</span>
             </div>
-          ))}
+            <span className="text-white/30 text-xs transition-transform duration-200" style={{ display: "inline-block", transform: installOpen ? "rotate(180deg)" : "none" }}>▾</span>
+          </button>
+
+          {installOpen && (
+            <div className="mt-1.5 rounded-2xl border overflow-hidden" style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)" }}>
+              <div className="grid grid-cols-2">
+                <div className="px-4 py-4 border-r" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <span className="text-sm">🍎</span>
+                    <span className="text-xs font-bold text-white/50 uppercase tracking-wider">iPhone · Safari</span>
+                  </div>
+                  <ol className="space-y-2">
+                    {["Ouvrir dans Safari", "Icône Partager ⬆", "Sur l'écran d'accueil", "Ajouter"].map((s, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs text-white/50 leading-snug">
+                        <span className="font-black flex-shrink-0" style={{ color: "#f59e0b" }}>{i + 1}.</span>
+                        {s}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+                <div className="px-4 py-4">
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <span className="text-sm">🤖</span>
+                    <span className="text-xs font-bold text-white/50 uppercase tracking-wider">Android · Chrome</span>
+                  </div>
+                  <ol className="space-y-2">
+                    {["Ouvrir dans Chrome", "Menu ⋮ en haut", "Ajouter à l'écran", "Confirmer"].map((s, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs text-white/50 leading-snug">
+                        <span className="font-black flex-shrink-0" style={{ color: "#f59e0b" }}>{i + 1}.</span>
+                        {s}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/25 text-xs animate-bounce">
-          <span>↓</span>
-        </div>
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/20 text-xs animate-bounce">↓</div>
       </section>
 
       {/* ── FLAG TICKER ── */}
@@ -213,83 +252,6 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── MOBILE APP ── */}
-      <section className="py-24 px-4 max-w-4xl mx-auto">
-        <div className="text-center mb-14">
-          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#f59e0b" }}>Application mobile</p>
-          <h2 className="text-3xl sm:text-4xl font-black">Installez l&apos;app en 10 secondes</h2>
-          <p className="text-white/50 mt-4 text-base max-w-lg mx-auto leading-relaxed">
-            Pas besoin de l&apos;App Store. Ajoutez CDM 2026 directement sur votre écran d&apos;accueil comme une vraie application.
-          </p>
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-5">
-          {/* iOS */}
-          <div className="rounded-2xl p-6 border" style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: "rgba(255,255,255,0.08)" }}>
-                🍎
-              </div>
-              <div>
-                <div className="font-black text-base">iPhone · iPad</div>
-                <div className="text-xs text-white/40">Safari uniquement</div>
-              </div>
-            </div>
-            <ol className="space-y-4">
-              {[
-                { icon: "🌐", text: "Ouvrez cette page dans Safari" },
-                { icon: "⬆️", text: <>Appuyez sur l&apos;icône <strong className="text-white">Partager</strong> en bas de l&apos;écran</> },
-                { icon: "➕", text: <>Sélectionnez <strong className="text-white">&ldquo;Sur l&apos;écran d&apos;accueil&rdquo;</strong></> },
-                { icon: "✅", text: <>Appuyez sur <strong className="text-white">Ajouter</strong> en haut à droite</> },
-              ].map(({ text }, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
-                    {i + 1}
-                  </span>
-                  <span className="text-sm text-white/60 leading-relaxed pt-0.5">{text}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          {/* Android */}
-          <div className="rounded-2xl p-6 border" style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: "rgba(255,255,255,0.08)" }}>
-                🤖
-              </div>
-              <div>
-                <div className="font-black text-base">Android</div>
-                <div className="text-xs text-white/40">Chrome recommandé</div>
-              </div>
-            </div>
-            <ol className="space-y-4">
-              {[
-                { text: "Ouvrez cette page dans Chrome" },
-                { text: <>Appuyez sur le menu <strong className="text-white">⋮</strong> en haut à droite</> },
-                { text: <>Sélectionnez <strong className="text-white">&ldquo;Ajouter à l&apos;écran d&apos;accueil&rdquo;</strong></> },
-                { text: <>Appuyez sur <strong className="text-white">Ajouter</strong> pour confirmer</> },
-              ].map(({ text }, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
-                    {i + 1}
-                  </span>
-                  <span className="text-sm text-white/60 leading-relaxed pt-0.5">{text}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-
-        {/* Result callout */}
-        <div className="mt-6 rounded-2xl px-6 py-4 flex items-center gap-4 border" style={{ background: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.2)" }}>
-          <span className="text-3xl flex-shrink-0">📱</span>
-          <p className="text-sm text-white/70 leading-relaxed">
-            L&apos;app s&apos;ouvre en plein écran, sans barre de navigation — exactement comme une application native. Notifications, mise à jour automatique des scores incluses.
-          </p>
         </div>
       </section>
 
