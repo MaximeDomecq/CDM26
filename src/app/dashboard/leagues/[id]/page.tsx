@@ -60,13 +60,25 @@ export default async function LeagueDetailPage({
   const lockedMatchIds = lockedMatches.map((m) => m.id);
 
   // All predictions from league members for locked matches
-  // Must override Supabase's default 1000-row limit — large leagues can exceed it
-  const { data: allPredictions } = await supabase
-    .from("predictions")
-    .select("user_id, match_id, home_score, away_score")
-    .in("user_id", memberIds.length > 0 ? memberIds : ["none"])
-    .in("match_id", lockedMatchIds.length > 0 ? lockedMatchIds : ["none"])
-    .limit(10000);
+  // Supabase enforces a server-side max_rows=1000 cap that client .limit() cannot override.
+  // We paginate in batches of 1000 until all rows are retrieved.
+  const allPredictions: Array<{ user_id: string; match_id: string; home_score: number; away_score: number }> = [];
+  if (memberIds.length > 0 && lockedMatchIds.length > 0) {
+    const PAGE = 1000;
+    let from = 0;
+    while (true) {
+      const { data: batch } = await supabase
+        .from("predictions")
+        .select("user_id, match_id, home_score, away_score")
+        .in("user_id", memberIds)
+        .in("match_id", lockedMatchIds)
+        .range(from, from + PAGE - 1);
+      if (!batch || batch.length === 0) break;
+      allPredictions.push(...batch);
+      if (batch.length < PAGE) break;
+      from += PAGE;
+    }
+  }
 
   const matchMap = new Map(lockedMatches.map((m) => [m.id, m]));
 
