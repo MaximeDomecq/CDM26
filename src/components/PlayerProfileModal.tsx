@@ -153,7 +153,6 @@ export default function PlayerProfileModal({ entry, breakdownTermines, onClose }
             <div className="space-y-2 mb-4">
               {TIER_CONFIG.map(({ key, label, pts, icon }) => {
                 const count = tierCounts[key] ?? 0;
-                const earned = count * pts + (key === "exact" && entry.topScorerBonus === 0 ? 0 : 0);
                 return (
                   <div key={key} className="flex items-center gap-2">
                     <span className="text-sm w-5 text-center">{icon}</span>
