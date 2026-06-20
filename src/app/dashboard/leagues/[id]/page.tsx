@@ -23,21 +23,41 @@ export default async function LeagueDetailPage({
 
   if (!league) notFound();
 
-  // Members + display names + tournament picks
+  // Members + display names + tournament picks + profile info
   const { data: members } = await supabase
     .from("league_members")
-    .select("user_id, profiles(display_name, predicted_top_scorer_id, predicted_winner)")
+    .select("user_id, profiles(display_name, avatar_color, favorite_team, favorite_team_flag, predicted_winner, predicted_winner_flag, predicted_top_scorer_id)")
     .eq("league_id", id);
 
   const memberList = (members ?? []).map((m) => {
     const profile = Array.isArray(m.profiles)
-      ? (m.profiles[0] as { display_name: string; predicted_top_scorer_id: string | null; predicted_winner: string | null } | undefined)
-      : (m.profiles as { display_name: string; predicted_top_scorer_id: string | null; predicted_winner: string | null } | null);
+      ? (m.profiles[0] as {
+          display_name: string;
+          avatar_color: string | null;
+          favorite_team: string | null;
+          favorite_team_flag: string | null;
+          predicted_winner: string | null;
+          predicted_winner_flag: string | null;
+          predicted_top_scorer_id: string | null;
+        } | undefined)
+      : (m.profiles as {
+          display_name: string;
+          avatar_color: string | null;
+          favorite_team: string | null;
+          favorite_team_flag: string | null;
+          predicted_winner: string | null;
+          predicted_winner_flag: string | null;
+          predicted_top_scorer_id: string | null;
+        } | null);
     return {
       userId: m.user_id,
       displayName: profile?.display_name ?? "Joueur",
-      topScorerId: profile?.predicted_top_scorer_id ?? null,
+      avatarColor: profile?.avatar_color ?? "#0369a1",
+      favoriteTeam: profile?.favorite_team ?? null,
+      favoriteTeamFlag: profile?.favorite_team_flag ?? null,
       predictedWinner: profile?.predicted_winner ?? null,
+      predictedWinnerFlag: profile?.predicted_winner_flag ?? null,
+      topScorerId: profile?.predicted_top_scorer_id ?? null,
     };
   });
 
@@ -106,21 +126,25 @@ export default async function LeagueDetailPage({
 
   // Player goal tallies + tournament winner — fetched in parallel
   const [{ data: allPlayers }, { data: appConfig }] = await Promise.all([
-    supabase.from("players").select("id, goals, won_golden_boot"),
+    supabase.from("players").select("id, name, team_flag, goals, won_golden_boot"),
     supabase.from("app_config").select("key, value"),
   ]);
   const playerMap = new Map(
-    (allPlayers ?? []).map((p) => [p.id, p as { id: string; goals: number; won_golden_boot: boolean }])
+    (allPlayers ?? []).map((p) => [p.id, p as { id: string; name: string; team_flag: string; goals: number; won_golden_boot: boolean }])
   );
   const tournamentWinner = appConfig?.find((c) => c.key === "tournament_winner")?.value ?? null;
 
   // Leaderboard — match points + top scorer bonus + predicted winner bonus
   const leaderboard = memberList.map((member) => {
-    const preds = (allPredictions ?? []).filter(
+    const preds = allPredictions.filter(
       (p) => p.user_id === member.userId && finishedMatchIds.has(p.match_id)
     );
     let matchPoints = 0;
     let exactCount = 0;
+    let goalDiffCount = 0;
+    let correctWinnerCount = 0;
+    let totalGoalsCount = 0;
+    let wrongCount = 0;
     let correctCount = 0;
     for (const pred of preds) {
       const match = matchMap.get(pred.match_id);
@@ -137,13 +161,25 @@ export default async function LeagueDetailPage({
         { home_score: match.home_score!, away_score: match.away_score! }
       );
       if (tier === "exact") exactCount++;
+      else if (tier === "goal_diff") goalDiffCount++;
+      else if (tier === "correct_winner") correctWinnerCount++;
+      else if (tier === "total_goals") totalGoalsCount++;
+      else wrongCount++;
       if (tier !== "wrong") correctCount++;
     }
     const player = member.topScorerId ? playerMap.get(member.topScorerId) : null;
     const topScorerBonus = player ? calculateTopScorerBonus(player.goals, player.won_golden_boot) : 0;
+    const topScorerName = player?.name ?? null;
+    const topScorerFlag = player?.team_flag ?? null;
     const winnerBonus = tournamentWinner && member.predictedWinner === tournamentWinner ? 20 : 0;
     const points = matchPoints + topScorerBonus + winnerBonus;
-    return { ...member, points, matchPoints, topScorerBonus, winnerBonus, predictionsCount: preds.length, exactCount, correctCount };
+    return {
+      ...member,
+      points, matchPoints, topScorerBonus, winnerBonus,
+      topScorerName, topScorerFlag,
+      predictionsCount: preds.length,
+      exactCount, goalDiffCount, correctWinnerCount, totalGoalsCount, wrongCount, correctCount,
+    };
   });
   leaderboard.sort((a, b) => b.points - a.points);
 

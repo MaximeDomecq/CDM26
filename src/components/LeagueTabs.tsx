@@ -3,17 +3,29 @@
 import { useState } from "react";
 import LeagueMatchBreakdown from "./LeagueMatchBreakdown";
 import LeagueChat from "./LeagueChat";
+import PlayerProfileModal from "./PlayerProfileModal";
 import type { MatchBreakdownItem } from "./LeagueMatchBreakdown";
 
 interface LeaderboardEntry {
   userId: string;
   displayName: string;
+  avatarColor: string;
+  favoriteTeam: string | null;
+  favoriteTeamFlag: string | null;
+  predictedWinner: string | null;
+  predictedWinnerFlag: string | null;
+  topScorerName: string | null;
+  topScorerFlag: string | null;
   points: number;
   matchPoints: number;
   topScorerBonus: number;
   winnerBonus: number;
   predictionsCount: number;
   exactCount: number;
+  goalDiffCount: number;
+  correctWinnerCount: number;
+  totalGoalsCount: number;
+  wrongCount: number;
   correctCount: number;
 }
 
@@ -36,6 +48,13 @@ export default function LeagueTabs({
   const [pronoTab, setPronoTab] = useState<PronoTab>(
     breakdownTermines.length > 0 ? "termines" : "en-cours"
   );
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const selectedEntry = selectedUserId
+    ? leaderboard.find(e => e.userId === selectedUserId) ?? null
+    : null;
+  const selectedRank = selectedUserId
+    ? leaderboard.findIndex(e => e.userId === selectedUserId) + 1
+    : 0;
 
   const mainTabs: { id: MainTab; label: string }[] = [
     { id: "classement", label: "Classement" },
@@ -80,11 +99,12 @@ export default function LeagueTabs({
               {leaderboard.map((entry, i) => (
                 <tr
                   key={entry.userId}
-                  className={
+                  onClick={() => setSelectedUserId(entry.userId)}
+                  className={`cursor-pointer ${
                     entry.userId === currentUserId
-                      ? "bg-brand-50 dark:bg-brand-950/30"
-                      : "hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                  }
+                      ? "bg-brand-50 dark:bg-brand-950/30 hover:bg-brand-100 dark:hover:bg-brand-950/50"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  } transition-colors`}
                 >
                   <td className="px-4 py-3.5 text-center">
                     {i === 0 ? <span className="text-lg">🥇</span>
@@ -93,11 +113,19 @@ export default function LeagueTabs({
                     : <span className="font-bold text-gray-400 dark:text-gray-600 text-sm">{i + 1}</span>}
                   </td>
                   <td className="px-4 py-3.5 font-semibold text-gray-900 dark:text-white">
-                    <div>
-                      {entry.displayName}
-                      {entry.userId === currentUserId && (
-                        <span className="ml-2 text-xs text-brand-500 dark:text-brand-400 font-medium">(vous)</span>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-white font-black text-[10px] flex-shrink-0"
+                        style={{ background: entry.avatarColor }}
+                      >
+                        {entry.displayName.trim().split(/\s+/).map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()}
+                      </span>
+                      <span>
+                        {entry.displayName}
+                        {entry.userId === currentUserId && (
+                          <span className="ml-2 text-xs text-brand-500 dark:text-brand-400 font-medium">(vous)</span>
+                        )}
+                      </span>
                     </div>
                     <div className="flex gap-2 mt-0.5 sm:hidden">
                       {entry.exactCount > 0 && (
@@ -199,6 +227,15 @@ export default function LeagueTabs({
           leagueId={leagueId}
           currentUserId={currentUserId}
           currentDisplayName={currentDisplayName}
+        />
+      )}
+
+      {/* Player profile modal */}
+      {selectedEntry && (
+        <PlayerProfileModal
+          entry={{ ...selectedEntry, rank: selectedRank }}
+          breakdownTermines={breakdownTermines}
+          onClose={() => setSelectedUserId(null)}
         />
       )}
 
