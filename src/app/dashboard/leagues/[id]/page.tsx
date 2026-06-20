@@ -72,6 +72,7 @@ export default async function LeagueDetailPage({
         .select("user_id, match_id, home_score, away_score")
         .in("user_id", memberIds)
         .in("match_id", lockedMatchIds)
+        .order("id")
         .range(from, from + PAGE - 1);
       if (!batch || batch.length === 0) break;
       allPredictions.push(...batch);
