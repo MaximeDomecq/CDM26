@@ -275,110 +275,107 @@ export default function LeagueChat({ leagueId, currentUserId, currentDisplayName
                 </span>
               )}
 
-              <div className={`flex items-end gap-1.5 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+              {/* Bulle + tout ce qui est en dessous */}
+              <div className="max-w-[80%] flex flex-col gap-0.5">
 
-                {/* Bulle */}
-                <div className="max-w-[75%] flex flex-col gap-0.5">
+                {/* Citation de réponse */}
+                {replyMsg && (
+                  <div className={`text-xs px-2 py-1 rounded-lg border-l-2 mb-0.5 truncate ${
+                    isMe
+                      ? "bg-brand-700/30 border-brand-400 text-brand-200"
+                      : "bg-gray-200 dark:bg-gray-700 border-gray-400 dark:border-gray-500 text-gray-600 dark:text-gray-300"
+                  }`}>
+                    <span className="font-bold">{replyMsg.display_name}</span>
+                    <span className="ml-1 opacity-80">{replyMsg.gif_url ? "🎬 GIF" : replyMsg.content}</span>
+                  </div>
+                )}
 
-                  {/* Citation de réponse */}
-                  {replyMsg && (
-                    <div className={`text-xs px-2 py-1 rounded-lg border-l-2 mb-0.5 truncate max-w-full ${
-                      isMe
-                        ? "bg-brand-700/30 border-brand-400 text-brand-200"
-                        : "bg-gray-200 dark:bg-gray-700 border-gray-400 dark:border-gray-500 text-gray-600 dark:text-gray-300"
-                    }`}>
-                      <span className="font-bold">{replyMsg.display_name}</span>
-                      <span className="ml-1 opacity-80">{replyMsg.gif_url ? "🎬 GIF" : replyMsg.content}</span>
-                    </div>
-                  )}
+                {/* Contenu */}
+                {msg.gif_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={msg.gif_url}
+                    alt="GIF"
+                    className="rounded-2xl max-w-[200px] max-h-[160px] object-cover"
+                  />
+                ) : (
+                  <div className={`px-3 py-2 rounded-2xl text-sm leading-snug break-words ${
+                    isMe
+                      ? "bg-brand-600 text-white rounded-tr-sm"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-tl-sm"
+                  }`}>
+                    {msg.content}
+                  </div>
+                )}
 
-                  {/* Contenu */}
-                  {msg.gif_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={msg.gif_url}
-                      alt="GIF"
-                      className="rounded-2xl max-w-[200px] max-h-[160px] object-cover"
-                    />
-                  ) : (
-                    <div className={`px-3 py-2 rounded-2xl text-sm leading-snug break-words ${
-                      isMe
-                        ? "bg-brand-600 text-white rounded-tr-sm"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-tl-sm"
-                    }`}>
-                      {msg.content}
-                    </div>
-                  )}
+                {/* Réactions */}
+                {hasReactions && (
+                  <div className="flex flex-wrap gap-1 mt-0.5">
+                    {Object.entries(msgReactions).map(([emoji, users]) => {
+                      if (users.length === 0) return null;
+                      const isMine = users.includes(currentUserId);
+                      return (
+                        <button
+                          key={emoji}
+                          onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, emoji); }}
+                          className={`flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full border transition-all active:scale-95 ${
+                            isMine
+                              ? "bg-brand-100 dark:bg-brand-900/40 border-brand-300 dark:border-brand-700 text-brand-700 dark:text-brand-300"
+                              : "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300"
+                          }`}
+                        >
+                          <span>{emoji}</span>
+                          <span className="font-bold">{users.length}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
-                  {/* Réactions */}
-                  {hasReactions && (
-                    <div className="flex flex-wrap gap-1 mt-0.5">
-                      {Object.entries(msgReactions).map(([emoji, users]) => {
-                        if (users.length === 0) return null;
-                        const isMine = users.includes(currentUserId);
-                        return (
-                          <button
-                            key={emoji}
-                            onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, emoji); }}
-                            className={`flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full border transition-all active:scale-95 ${
-                              isMine
-                                ? "bg-brand-100 dark:bg-brand-900/40 border-brand-300 dark:border-brand-700 text-brand-700 dark:text-brand-300"
-                                : "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300"
-                            }`}
-                          >
-                            <span>{emoji}</span>
-                            <span className="font-bold">{users.length}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Boutons d'action (au survol) */}
-                <div className={`flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity pb-1`}>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setReplyTo(msg); inputRef.current?.focus(); }}
-                    className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-xs transition-colors"
-                    title="Répondre"
-                  >
-                    ↩
-                  </button>
-
-                  <div className="relative">
+                {/* Heure + boutons d'action sous la bulle */}
+                <div className={`flex items-center gap-1.5 mt-0.5 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+                  <span className="text-[10px] text-gray-300 dark:text-gray-700">
+                    {fmtTime(msg.created_at)}
+                  </span>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Répondre */}
                     <button
-                      onClick={(e) => { e.stopPropagation(); setEmojiPickerFor(emojiPickerFor === msg.id ? null : msg.id); }}
-                      className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-xs transition-colors"
-                      title="Réagir"
+                      onClick={(e) => { e.stopPropagation(); setReplyTo(msg); inputRef.current?.focus(); }}
+                      className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-[11px] transition-colors"
+                      title="Répondre"
                     >
-                      😊
+                      ↩
                     </button>
-
-                    {emojiPickerFor === msg.id && (
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className={`absolute bottom-8 z-50 flex gap-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-2 ${isMe ? "right-0" : "left-0"}`}
+                    {/* Réagir */}
+                    <div className="relative">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEmojiPickerFor(emojiPickerFor === msg.id ? null : msg.id); }}
+                        className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-[11px] transition-colors"
+                        title="Réagir"
                       >
-                        {PRESET_EMOJIS.map(e => (
-                          <button
-                            key={e}
-                            onClick={() => toggleReaction(msg.id, e)}
-                            className={`text-lg w-8 h-8 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center transition-all hover:scale-110 active:scale-95 ${
-                              reactions[msg.id]?.[e]?.includes(currentUserId) ? "bg-brand-100 dark:bg-brand-900/40" : ""
-                            }`}
-                          >
-                            {e}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                        😊
+                      </button>
+                      {emojiPickerFor === msg.id && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className={`absolute bottom-7 z-50 flex gap-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-2 ${isMe ? "right-0" : "left-0"}`}
+                        >
+                          {PRESET_EMOJIS.map(e => (
+                            <button
+                              key={e}
+                              onClick={() => toggleReaction(msg.id, e)}
+                              className={`text-lg w-8 h-8 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center transition-all hover:scale-110 active:scale-95 ${
+                                reactions[msg.id]?.[e]?.includes(currentUserId) ? "bg-brand-100 dark:bg-brand-900/40" : ""
+                              }`}
+                            >
+                              {e}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                {/* Heure */}
-                <span className="text-[10px] text-gray-300 dark:text-gray-700 pb-1 flex-shrink-0 self-end">
-                  {fmtTime(msg.created_at)}
-                </span>
               </div>
             </div>
           );
