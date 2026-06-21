@@ -31,11 +31,11 @@ export default function LeagueChat({ leagueId, currentUserId, currentDisplayName
       .from("league_messages")
       .select("*")
       .eq("league_id", leagueId)
-      .order("created_at", { ascending: true })
-      .limit(100)
+      .order("created_at", { ascending: false })
+      .limit(500)
       .then(({ data, error }) => {
         if (error) { setUnavailable(true); return; }
-        if (data) setMessages(data as Message[]);
+        if (data) setMessages((data as Message[]).reverse());
       });
 
     const channel = supabase
