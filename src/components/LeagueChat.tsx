@@ -36,7 +36,6 @@ interface Props {
 }
 
 const PRESET_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🎯", "🔥", "🏆"];
-const GIPHY_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY ?? "dc6zaTOxFJmzC";
 
 function buildReactions(rows: ReactionRow[]): ReactionsMap {
   const map: ReactionsMap = {};
@@ -161,17 +160,10 @@ export default function LeagueChat({ leagueId, currentUserId, currentDisplayName
     gifTimerRef.current = setTimeout(async () => {
       setGifLoading(true);
       try {
-        const endpoint = gifQuery.trim()
-          ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(gifQuery)}&limit=9&rating=g&lang=fr`
-          : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_KEY}&limit=9&rating=g`;
-        const res = await fetch(endpoint);
+        const url = `/api/gifs${gifQuery.trim() ? `?q=${encodeURIComponent(gifQuery)}` : ""}`;
+        const res = await fetch(url);
         const json = await res.json();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setGifResults((json.data ?? []).map((g: any) => ({
-          id: g.id,
-          url: g.images.original.url,
-          preview: g.images.fixed_height_small.url,
-        })));
+        setGifResults(json.data ?? []);
       } catch {
         setGifResults([]);
       }

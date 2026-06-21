@@ -98,8 +98,7 @@ export async function GET(req: NextRequest) {
       .from("matches")
       .update({ home_score: home, away_score: away })
       .eq("home_team", homeFr)
-      .eq("away_team", awayFr)
-      .is("home_score", null);
+      .eq("away_team", awayFr);
 
     if (!error) updated++;
   }
