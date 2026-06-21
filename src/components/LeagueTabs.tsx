@@ -273,27 +273,50 @@ export default function LeagueTabs({
                 ))}
               </div>
             </div>
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Bonus de tournoi</h4>
-              <div className="space-y-3">
-                <div className="rounded-xl border border-gold-300 dark:border-gold-900/60 bg-amber-50/50 dark:bg-amber-950/20 p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span>🏆</span>
-                    <span className="font-bold text-sm text-gray-900 dark:text-white">Vainqueur de la Coupe</span>
+            <div className="space-y-5">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Bonus de tournoi</h4>
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-gold-300 dark:border-gold-900/60 bg-amber-50/50 dark:bg-amber-950/20 p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span>🏆</span>
+                      <span className="font-bold text-sm text-gray-900 dark:text-white">Vainqueur de la Coupe</span>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Si ton équipe gagne : <span className="font-black text-emerald-600 dark:text-emerald-400">+20 pts</span>
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Si ton équipe gagne : <span className="font-black text-emerald-600 dark:text-emerald-400">+20 pts</span>
-                  </p>
+                  <div className="rounded-xl border border-brand-200 dark:border-brand-900/60 bg-brand-50/50 dark:bg-brand-950/20 p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span>⚽</span>
+                      <span className="font-bold text-sm text-gray-900 dark:text-white">Meilleur buteur</span>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <span className="font-black text-emerald-600 dark:text-emerald-400">+2 pts</span> par but ·{" "}
+                      <span className="font-black text-emerald-600 dark:text-emerald-400">+10 pts</span> Soulier d&apos;Or
+                    </p>
+                  </div>
                 </div>
-                <div className="rounded-xl border border-brand-200 dark:border-brand-900/60 bg-brand-50/50 dark:bg-brand-950/20 p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span>⚽</span>
-                    <span className="font-bold text-sm text-gray-900 dark:text-white">Meilleur buteur</span>
-                  </div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    <span className="font-black text-emerald-600 dark:text-emerald-400">+2 pts</span> par but ·{" "}
-                    <span className="font-black text-emerald-600 dark:text-emerald-400">+10 pts</span> Soulier d&apos;Or
-                  </p>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Départage à égalité de points</h4>
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">En cas d&apos;égalité de points, le classement est déterminé dans cet ordre :</p>
+                  <ol className="space-y-1.5">
+                    {[
+                      { n: "1", icon: "🎯", label: "Plus de scores exacts" },
+                      { n: "2", icon: "↔",  label: "Plus de bonnes différences de buts" },
+                      { n: "3", icon: "✓",  label: "Plus de bons vainqueurs" },
+                      { n: "4", icon: "➕", label: "Plus de bons totaux de buts" },
+                    ].map(({ n, icon, label }) => (
+                      <li key={n} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                        <span className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-black text-[10px] flex items-center justify-center flex-shrink-0">{n}</span>
+                        <span>{icon}</span>
+                        <span>{label}</span>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
               </div>
             </div>

@@ -181,7 +181,13 @@ export default async function LeagueDetailPage({
       exactCount, goalDiffCount, correctWinnerCount, totalGoalsCount, wrongCount, correctCount,
     };
   });
-  leaderboard.sort((a, b) => b.points - a.points);
+  leaderboard.sort((a, b) =>
+    b.points - a.points ||
+    b.exactCount - a.exactCount ||
+    b.goalDiffCount - a.goalDiffCount ||
+    b.correctWinnerCount - a.correctWinnerCount ||
+    b.totalGoalsCount - a.totalGoalsCount
+  );
 
   // Match breakdown — all locked matches, each member's prediction + points
   const breakdown: MatchBreakdownItem[] = lockedMatches.map((match) => {
