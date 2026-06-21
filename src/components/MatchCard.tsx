@@ -90,6 +90,10 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
   const hasSavedPrediction = savedHome !== null && savedAway !== null;
   const canEdit = !dynamicLocked;
 
+  // Match en cours : coup d'envoi passé depuis moins de 130 min et score renseigné
+  const minsElapsed = (Date.now() - parseISO(match.kickoff_at).getTime()) / 60000;
+  const isLive = dynamicLocked && hasResult && minsElapsed <= 130;
+
   const tier = hasResult && hasSavedPrediction
     ? getTier(
         { home_score: savedHome, away_score: savedAway },
@@ -147,6 +151,14 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
           <span>·</span>
           <span className="font-mono">{format(cestTime, "HH:mm")} CEST</span>
         </div>
+
+        {/* Badge EN COURS */}
+        {isLive && (
+          <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 whitespace-nowrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
+            EN COURS
+          </span>
+        )}
 
         {/* Status badge — toujours visible */}
         {canEdit && hasSavedPrediction && (

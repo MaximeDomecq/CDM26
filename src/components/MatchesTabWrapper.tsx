@@ -431,7 +431,12 @@ export default function MatchesTabWrapper({
 
       {tab === "pronos" ? (
         <MatchesClient
-          matches={matches.filter(m => m.home_score === null)}
+          matches={matches.filter(m => {
+            if (m.home_score === null) return true; // pas encore commencé
+            // Garder les matchs en cours (≤ 130 min après le coup d'envoi)
+            const minsElapsed = (Date.now() - new Date(m.kickoff_at).getTime()) / 60000;
+            return minsElapsed <= 130;
+          })}
           predictions={predictions}
           userId={userId}
           favoriteTeam={favoriteTeam}
