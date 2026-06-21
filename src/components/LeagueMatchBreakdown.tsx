@@ -142,11 +142,6 @@ export default function LeagueMatchBreakdown({ breakdown }: Props) {
                               {TIER_LABEL[entry.tier]}
                             </span>
                           )}
-                          {entry.isUniqueExact && (
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400">
-                              ⭐ +1 seul exact
-                            </span>
-                          )}
                           {entry.points !== null && (
                             <span className="font-black text-brand-600 dark:text-brand-400 text-sm w-14 text-right">
                               +{entry.points} pts
