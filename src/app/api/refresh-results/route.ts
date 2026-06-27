@@ -78,7 +78,12 @@ export async function GET(req: NextRequest) {
     matches: {
       homeTeam: { name: string };
       awayTeam: { name: string };
-      score: { fullTime: { home: number | null; away: number | null } };
+      score: {
+        winner: "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null;
+        fullTime: { home: number | null; away: number | null };
+        extraTime: { home: number | null; away: number | null } | null;
+        penalties: { home: number | null; away: number | null } | null;
+      };
     }[]
   };
 
@@ -94,9 +99,41 @@ export async function GET(req: NextRequest) {
 
     if (!homeFr || !awayFr) { skipped++; continue; }
 
+    // Knockout: determine match_end_type, extra_time scores, winner_team
+    let matchEndType: "90min" | "aet" | "pens" | null = null;
+    let extraTimeHome: number | null = null;
+    let extraTimeAway: number | null = null;
+    let winnerTeam: string | null = null;
+
+    if (m.score.penalties) {
+      matchEndType = "pens";
+      extraTimeHome = m.score.extraTime?.home ?? home;
+      extraTimeAway = m.score.extraTime?.away ?? away;
+    } else if (m.score.extraTime) {
+      matchEndType = "aet";
+      extraTimeHome = m.score.extraTime.home;
+      extraTimeAway = m.score.extraTime.away;
+    } else if (m.score.winner && m.score.winner !== "DRAW") {
+      matchEndType = "90min";
+    }
+
+    if (m.score.winner === "HOME_TEAM") winnerTeam = homeFr;
+    else if (m.score.winner === "AWAY_TEAM") winnerTeam = awayFr;
+
+    const updatePayload: Record<string, unknown> = {
+      home_score: home,
+      away_score: away,
+    };
+    if (matchEndType) {
+      updatePayload.match_end_type = matchEndType;
+      updatePayload.winner_team = winnerTeam;
+      updatePayload.extra_time_home_score = extraTimeHome;
+      updatePayload.extra_time_away_score = extraTimeAway;
+    }
+
     const { error } = await supabase
       .from("matches")
-      .update({ home_score: home, away_score: away })
+      .update(updatePayload)
       .eq("home_team", homeFr)
       .eq("away_team", awayFr);
 

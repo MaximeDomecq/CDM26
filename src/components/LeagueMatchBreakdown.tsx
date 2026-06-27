@@ -4,14 +4,15 @@ import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { flag } from "@/lib/teams";
-import type { ScoreTier } from "@/lib/scoring";
+import type { ScoreTier, KnockoutTier } from "@/lib/scoring";
 
 export interface PredictionEntry {
   userId: string;
   displayName: string;
   prediction: { home_score: number; away_score: number } | null;
+  knockoutPrediction: { qualifier_team: string | null; predicted_context: string | null } | null;
   points: number | null;
-  tier: ScoreTier | null;
+  tier: ScoreTier | KnockoutTier | null;
   isMe: boolean;
   isUniqueExact?: boolean;
 }
@@ -24,6 +25,8 @@ export interface MatchBreakdownItem {
   homeScore: number | null;
   awayScore: number | null;
   phase: string;
+  matchEndType: string | null;
+  winnerTeam: string | null;
   entries: PredictionEntry[];
 }
 
@@ -31,7 +34,7 @@ interface Props {
   breakdown: MatchBreakdownItem[];
 }
 
-const TIER_STYLE: Record<ScoreTier, string> = {
+const TIER_STYLE: Record<string, string> = {
   exact:          "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400",
   goal_diff:      "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400",
   correct_winner: "bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-400",
@@ -39,12 +42,17 @@ const TIER_STYLE: Record<ScoreTier, string> = {
   wrong:          "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500",
 };
 
-const TIER_LABEL: Record<ScoreTier, string> = {
+const TIER_LABEL: Record<string, string> = {
   exact:          "Score exact ✓",
   goal_diff:      "Différence",
   correct_winner: "Résultat",
   total_goals:    "Total buts",
   wrong:          "Raté",
+};
+
+const END_TYPE_LABEL: Record<string, string> = {
+  aet: "Prol.",
+  pens: "T.A.B.",
 };
 
 export default function LeagueMatchBreakdown({ breakdown }: Props) {
@@ -66,6 +74,7 @@ export default function LeagueMatchBreakdown({ breakdown }: Props) {
         const isOpen = openId === item.matchId;
         const cestTime = parseISO(item.kickoffAt);
         const isFinished = item.homeScore !== null;
+        const isKO = item.phase !== "Groupe";
         const predictedCount = item.entries.filter((e) => e.prediction !== null).length;
 
         return (
@@ -91,12 +100,24 @@ export default function LeagueMatchBreakdown({ breakdown }: Props) {
                   )}
                   <span>{item.awayTeam}</span>
                   <span>{flag(item.awayTeam)}</span>
+                  {/* Qualifier winner badge */}
+                  {isKO && item.winnerTeam && (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400">
+                      {flag(item.winnerTeam)} {item.winnerTeam}
+                    </span>
+                  )}
                 </div>
-                <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                  {format(cestTime, "d MMM · HH:mm", { locale: fr })} CEST
-                  {" · "}{item.phase}
+                <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                  <span>{format(cestTime, "d MMM · HH:mm", { locale: fr })} CEST</span>
+                  <span>·</span>
+                  <span>{item.phase}</span>
+                  {isKO && item.matchEndType && item.matchEndType !== "90min" && (
+                    <span className="font-bold text-purple-600 dark:text-purple-400">
+                      {END_TYPE_LABEL[item.matchEndType]}
+                    </span>
+                  )}
                   {!isFinished && (
-                    <span className="ml-2 text-amber-500 font-semibold">En cours / à venir</span>
+                    <span className="text-amber-500 font-semibold">En cours / à venir</span>
                   )}
                 </div>
               </div>
@@ -134,12 +155,28 @@ export default function LeagueMatchBreakdown({ breakdown }: Props) {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {entry.prediction ? (
                         <>
-                          <span className="font-mono font-black text-sm text-gray-900 dark:text-white">
-                            {entry.prediction.home_score}–{entry.prediction.away_score}
-                          </span>
-                          {entry.tier && (
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${TIER_STYLE[entry.tier]}`}>
-                              {TIER_LABEL[entry.tier]}
+                          {/* Knockout: afficher qualifier + context + score */}
+                          {isKO && entry.knockoutPrediction ? (
+                            <span className="font-mono font-bold text-xs text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                              {entry.knockoutPrediction.qualifier_team && (
+                                <>{flag(entry.knockoutPrediction.qualifier_team)}</>
+                              )}
+                              <span className="text-gray-400 dark:text-gray-500">
+                                {entry.knockoutPrediction.predicted_context === "90min" ? "90m" : "+"}
+                              </span>
+                              <span className="tabular-nums">
+                                {entry.prediction.home_score}–{entry.prediction.away_score}
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="font-mono font-black text-sm text-gray-900 dark:text-white">
+                              {entry.prediction.home_score}–{entry.prediction.away_score}
+                            </span>
+                          )}
+
+                          {entry.tier && entry.tier !== "wrong" && (
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${TIER_STYLE[entry.tier] ?? ""}`}>
+                              {TIER_LABEL[entry.tier] ?? entry.tier}
                             </span>
                           )}
                           {entry.points !== null && (

@@ -39,6 +39,238 @@ interface Props {
 }
 
 type MainTab = "classement" | "pronostics" | "discussion" | "regles";
+type ReglesSubTab = "groupes" | "tournoi" | "bonus";
+
+function PtsBadge({ pts, color }: { pts: string; color: "emerald" | "blue" | "sky" | "amber" | "purple" | "gray" }) {
+  const cls = {
+    emerald: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400",
+    blue:    "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400",
+    sky:     "bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-400",
+    amber:   "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400",
+    purple:  "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400",
+    gray:    "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500",
+  }[color];
+  return (
+    <span className={`flex-shrink-0 font-black text-xs px-2 py-0.5 rounded-full min-w-[48px] text-center ${cls}`}>
+      {pts}
+    </span>
+  );
+}
+
+function ReglesTab() {
+  const [tab, setTab] = useState<ReglesSubTab>("groupes");
+
+  const tabs: { id: ReglesSubTab; label: string }[] = [
+    { id: "groupes", label: "Phase de groupes" },
+    { id: "tournoi", label: "Phase tournoi" },
+    { id: "bonus",   label: "Bonus favoris" },
+  ];
+
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-card">
+      <div className="bg-wc-header px-5 py-3">
+        <h3 className="text-white font-black text-sm">Comment sont calculés les points ?</h3>
+      </div>
+
+      {/* Sous-navigation */}
+      <div className="flex gap-1 p-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              tab === t.id
+                ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-5">
+
+        {/* ── Phase de groupes ── */}
+        {tab === "groupes" && (
+          <div className="grid sm:grid-cols-2 gap-5">
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Par match</h4>
+              <div className="space-y-2">
+                {[
+                  { pts: "5 pts", label: "Score exact", sub: "", color: "emerald" as const },
+                  { pts: "+1",   label: "Bonus score unique", sub: "Si tu es le seul de la ligue à avoir le bon score", color: "emerald" as const },
+                  { pts: "3 pts", label: "Bonne différence de buts", sub: "Ex : prono 2-0, résultat 3-1", color: "blue" as const },
+                  { pts: "2 pts", label: "Bon résultat", sub: "Victoire ou match nul correct", color: "sky" as const },
+                  { pts: "1 pt",  label: "Bon nombre de buts", sub: "Total correct mais mauvais résultat", color: "amber" as const },
+                  { pts: "0 pt",  label: "Mauvais pronostic", sub: "", color: "gray" as const },
+                ].map(({ pts, label, sub, color }) => (
+                  <div key={label} className="flex items-start gap-3">
+                    <PtsBadge pts={pts} color={color} />
+                    <div>
+                      <div className="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-tight">{label}</div>
+                      {sub && <div className="text-xs text-gray-400 dark:text-gray-600 mt-0.5">{sub}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Départage à égalité</h4>
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">En cas d&apos;égalité de points :</p>
+                <ol className="space-y-1.5">
+                  {[
+                    { n: "1", icon: "🎯", label: "Plus de scores exacts" },
+                    { n: "2", icon: "↔",  label: "Plus de bonnes différences" },
+                    { n: "3", icon: "✓",  label: "Plus de bons vainqueurs" },
+                    { n: "4", icon: "➕", label: "Plus de bons totaux de buts" },
+                  ].map(({ n, icon, label }) => (
+                    <li key={n} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                      <span className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-black text-[10px] flex items-center justify-center flex-shrink-0">{n}</span>
+                      <span>{icon}</span>
+                      <span>{label}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Phase tournoi ── */}
+        {tab === "tournoi" && (
+          <div className="space-y-5">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              À partir des seizièmes de finale, chaque prono comporte <strong className="text-gray-700 dark:text-gray-300">3 champs indépendants</strong>.
+            </p>
+
+            {/* 3 champs */}
+            <div className="space-y-3">
+              <div className="rounded-xl border border-brand-200 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/20 p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <PtsBadge pts="1 pt" color="purple" />
+                  <span className="font-bold text-sm text-gray-900 dark:text-white">Bon qualifié</span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">L&apos;équipe que tu as choisie pour se qualifier avance.</p>
+              </div>
+
+              <div className="rounded-xl border border-brand-200 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/20 p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <PtsBadge pts="1 pt" color="purple" />
+                  <span className="font-bold text-sm text-gray-900 dark:text-white">Bon contexte</span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Tu as prédit <strong>90 min</strong> (victoire en temps réglementaire) ou <strong>+</strong> (prolongation ou tirs au but) correctement.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-brand-200 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/20 p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-bold text-sm text-gray-900 dark:text-white">Score à 90 min</span>
+                </div>
+                <div className="space-y-1.5">
+                  {[
+                    { pts: "+3 pts", label: "Score exact", sub: "(+1 si unique dans la ligue)", color: "emerald" as const },
+                    { pts: "+2 pts", label: "Bonne différence de buts", sub: "Ex : 2-0 prédit, 3-1 résultat", color: "blue" as const },
+                    { pts: "+1 pt",  label: "Bon total de buts", sub: "Consolation — uniquement si 0 pt par ailleurs", color: "amber" as const },
+                  ].map(({ pts, label, sub, color }) => (
+                    <div key={label} className="flex items-start gap-2">
+                      <PtsBadge pts={pts} color={color} />
+                      <div>
+                        <div className="text-xs font-semibold text-gray-800 dark:text-gray-200">{label}</div>
+                        <div className="text-[11px] text-gray-400 dark:text-gray-600">{sub}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Maximum */}
+            <div className="rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-3">
+              <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Maximum par match éliminatoire</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Qualifié <span className="font-black text-purple-600 dark:text-purple-400">+1</span> ·
+                Contexte <span className="font-black text-purple-600 dark:text-purple-400">+1</span> ·
+                Score exact <span className="font-black text-emerald-600 dark:text-emerald-400">+3</span>
+                {" = "}<span className="font-black text-gray-900 dark:text-white">5 pts</span>
+                <span className="text-gray-400 dark:text-gray-600"> (6 si score unique)</span>
+              </p>
+            </div>
+
+            {/* Note score */}
+            <div className="text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/30 rounded-xl p-3">
+              <p className="font-semibold text-gray-600 dark:text-gray-400 mb-1">Le score saisi = score à 90 min</p>
+              <ul className="space-y-0.5 list-disc list-inside">
+                <li>Si tu choisis <strong>90 min</strong> → score vainqueur (nul impossible)</li>
+                <li>Si tu choisis <strong>+</strong> → score nul à 90 min obligatoire. Le score à 120 min est pris en compte pour l&apos;exactitude.</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* ── Bonus favoris ── */}
+        {tab === "bonus" && (
+          <div className="space-y-4">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Ces bonus s&apos;ajoutent aux points de matchs et se jouent sur toute la durée du tournoi.
+            </p>
+
+            <div className="space-y-3">
+              <div className="rounded-xl border border-gold-300 dark:border-gold-900/60 bg-amber-50/50 dark:bg-amber-950/20 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">🏆</span>
+                  <span className="font-bold text-sm text-gray-900 dark:text-white">Vainqueur de la Coupe du Monde</span>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Si tu as prédit la bonne équipe championne du monde :{" "}
+                  <span className="font-black text-emerald-600 dark:text-emerald-400">+20 pts</span>
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-600 mt-1 italic">
+                  Choix effectué avant le début du tournoi, non modifiable.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-brand-200 dark:border-brand-900/60 bg-brand-50/50 dark:bg-brand-950/20 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">⚽</span>
+                  <span className="font-bold text-sm text-gray-900 dark:text-white">Meilleur buteur</span>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  <span className="font-black text-emerald-600 dark:text-emerald-400">+2 pts</span> par but marqué par ton joueur ·{" "}
+                  <span className="font-black text-emerald-600 dark:text-emerald-400">+10 pts</span> s&apos;il remporte le Soulier d&apos;Or
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-600 mt-1 italic">
+                  Les points s&apos;accumulent au fil des matchs.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Départage à égalité de points</h4>
+              <ol className="space-y-1.5">
+                {[
+                  { n: "1", icon: "🎯", label: "Plus de scores exacts" },
+                  { n: "2", icon: "↔",  label: "Plus de bonnes différences" },
+                  { n: "3", icon: "✓",  label: "Plus de bons vainqueurs" },
+                  { n: "4", icon: "➕", label: "Plus de bons totaux de buts" },
+                ].map(({ n, icon, label }) => (
+                  <li key={n} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                    <span className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-black text-[10px] flex items-center justify-center flex-shrink-0">{n}</span>
+                    <span>{icon}</span>
+                    <span>{label}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
 type PronoTab = "en-cours" | "termines";
 
 export default function LeagueTabs({
@@ -241,87 +473,7 @@ export default function LeagueTabs({
 
       {/* Règles */}
       {tab === "regles" && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-card">
-          <div className="bg-wc-header px-5 py-3">
-            <h3 className="text-white font-black text-sm">Comment sont calculés les points ?</h3>
-          </div>
-          <div className="p-5 grid sm:grid-cols-2 gap-5">
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Par match</h4>
-              <div className="space-y-2">
-                {[
-                  { pts: "5 pts", label: "Score exact", sub: "", color: "emerald" },
-                  { pts: "+1",   label: "Bonus score unique", sub: "Si tu es le seul de la ligue à avoir le bon score", color: "emerald" },
-                  { pts: "3 pts", label: "Bonne différence de buts", sub: "Ex : prono 2-0, résultat 3-1", color: "blue" },
-                  { pts: "2 pts", label: "Bon résultat", sub: "Victoire ou match nul correct", color: "sky" },
-                  { pts: "1 pt",  label: "Bon nombre de buts", sub: "Le total de buts des deux équipes est correct", color: "amber" },
-                  { pts: "0 pt",  label: "Mauvais pronostic", sub: "", color: "gray" },
-                ].map(({ pts, label, sub, color }) => (
-                  <div key={label} className="flex items-start gap-3">
-                    <span className={`flex-shrink-0 font-black text-xs px-2 py-0.5 rounded-full min-w-[44px] text-center
-                      ${color === "emerald" ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400" :
-                        color === "blue"    ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400" :
-                        color === "sky"     ? "bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-400" :
-                        color === "amber"   ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400" :
-                                             "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500"
-                      }`}>{pts}</span>
-                    <div>
-                      <div className="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-tight">{label}</div>
-                      {sub && <div className="text-xs text-gray-400 dark:text-gray-600 mt-0.5">{sub}</div>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-5">
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Bonus de tournoi</h4>
-                <div className="space-y-3">
-                  <div className="rounded-xl border border-gold-300 dark:border-gold-900/60 bg-amber-50/50 dark:bg-amber-950/20 p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span>🏆</span>
-                      <span className="font-bold text-sm text-gray-900 dark:text-white">Vainqueur de la Coupe</span>
-                    </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      Si ton équipe gagne : <span className="font-black text-emerald-600 dark:text-emerald-400">+20 pts</span>
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-brand-200 dark:border-brand-900/60 bg-brand-50/50 dark:bg-brand-950/20 p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span>⚽</span>
-                      <span className="font-bold text-sm text-gray-900 dark:text-white">Meilleur buteur</span>
-                    </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      <span className="font-black text-emerald-600 dark:text-emerald-400">+2 pts</span> par but ·{" "}
-                      <span className="font-black text-emerald-600 dark:text-emerald-400">+10 pts</span> Soulier d&apos;Or
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Départage à égalité de points</h4>
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">En cas d&apos;égalité de points, le classement est déterminé dans cet ordre :</p>
-                  <ol className="space-y-1.5">
-                    {[
-                      { n: "1", icon: "🎯", label: "Plus de scores exacts" },
-                      { n: "2", icon: "↔",  label: "Plus de bonnes différences de buts" },
-                      { n: "3", icon: "✓",  label: "Plus de bons vainqueurs" },
-                      { n: "4", icon: "➕", label: "Plus de bons totaux de buts" },
-                    ].map(({ n, icon, label }) => (
-                      <li key={n} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-                        <span className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-black text-[10px] flex items-center justify-center flex-shrink-0">{n}</span>
-                        <span>{icon}</span>
-                        <span>{label}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ReglesTab />
       )}
     </div>
   );

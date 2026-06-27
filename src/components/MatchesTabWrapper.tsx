@@ -16,6 +16,10 @@ interface Match {
   phase: string;
   home_score: number | null;
   away_score: number | null;
+  extra_time_home_score: number | null;
+  extra_time_away_score: number | null;
+  match_end_type: string | null;
+  winner_team: string | null;
 }
 
 interface Prediction {
@@ -23,6 +27,8 @@ interface Prediction {
   match_id: string;
   home_score: number;
   away_score: number;
+  qualifier_team: string | null;
+  predicted_context: string | null;
 }
 
 interface CalendarMatch {

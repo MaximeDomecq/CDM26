@@ -32,6 +32,11 @@ create table public.matches (
   phase text not null default 'Groupe',  -- 'Groupe', 'Huitièmes', etc.
   home_score integer,
   away_score integer,
+  -- Knockout fields (null for group stage)
+  extra_time_home_score integer,
+  extra_time_away_score integer,
+  match_end_type text check (match_end_type in ('90min', 'aet', 'pens')),
+  winner_team text,
   created_at timestamptz default now()
 );
 
@@ -42,6 +47,9 @@ create table public.predictions (
   match_id uuid not null references public.matches(id) on delete cascade,
   home_score integer not null,
   away_score integer not null,
+  -- Knockout fields (null for group stage)
+  qualifier_team text,
+  predicted_context text check (predicted_context in ('90min', '+')),
   created_at timestamptz default now(),
   unique(user_id, match_id)
 );
@@ -107,3 +115,40 @@ create policy "Members can view their leagues"
 create policy "Users can join leagues"
   on public.league_members for insert to authenticated
   with check (auth.uid() = user_id);
+
+-- League messages (chat)
+create table public.league_messages (
+  id          uuid        primary key default gen_random_uuid(),
+  league_id   uuid        not null references public.leagues(id) on delete cascade,
+  user_id     uuid        not null references public.profiles(id) on delete cascade,
+  display_name text       not null,
+  content     text        not null check (char_length(content) between 1 and 300),
+  created_at  timestamptz default now()
+);
+
+create index on public.league_messages (league_id, created_at);
+
+alter table public.league_messages enable row level security;
+
+create policy "League members can view messages"
+  on public.league_messages for select to authenticated
+  using (
+    exists (
+      select 1 from public.league_members
+      where league_id = league_messages.league_id
+        and user_id = auth.uid()
+    )
+  );
+
+create policy "League members can send messages"
+  on public.league_messages for insert to authenticated
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1 from public.league_members
+      where league_id = league_messages.league_id
+        and user_id = auth.uid()
+    )
+  );
+
+alter publication supabase_realtime add table public.league_messages;
