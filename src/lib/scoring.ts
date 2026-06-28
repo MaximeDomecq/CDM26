@@ -75,7 +75,7 @@ export function calculateTopScorerBonus(goals: number, wonGoldenBoot: boolean): 
 // ── Phase éliminatoire (knockout) ────────────────────────────────────────────
 
 export function isKnockoutPhase(phase: string): boolean {
-  return phase !== "Groupe";
+  return !phase.startsWith("Groupe");
 }
 
 export interface KnockoutPrediction {
