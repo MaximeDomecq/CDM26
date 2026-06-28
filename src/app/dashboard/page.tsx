@@ -122,7 +122,6 @@ export default async function DashboardPage() {
         <NavCard href="/dashboard/leagues" emoji="🏆" title="Mes ligues" />
         <NavCard href="/dashboard/groupes" emoji="📊" title="Groupes" />
         <NavCard href="/dashboard/profile" emoji="🎯" title="Mon profil" />
-        <NavCard href="/dashboard/regles" emoji="📋" title="Règles du jeu" />
       </div>
 
       {/* Upcoming matches */}

@@ -149,7 +149,7 @@ function ReglesTab() {
             <div className="space-y-3">
               <div className="rounded-xl border border-brand-200 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/20 p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <PtsBadge pts="1 pt" color="purple" />
+                  <PtsBadge pts="2 pts" color="purple" />
                   <span className="font-bold text-sm text-gray-900 dark:text-white">Bon qualifié</span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">L&apos;équipe que tu as choisie pour se qualifier avance.</p>
@@ -191,20 +191,20 @@ function ReglesTab() {
             <div className="rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-3">
               <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Maximum par match éliminatoire</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Qualifié <span className="font-black text-purple-600 dark:text-purple-400">+1</span> ·
+                Qualifié <span className="font-black text-purple-600 dark:text-purple-400">+2</span> ·
                 Contexte <span className="font-black text-purple-600 dark:text-purple-400">+1</span> ·
                 Score exact <span className="font-black text-emerald-600 dark:text-emerald-400">+3</span>
-                {" = "}<span className="font-black text-gray-900 dark:text-white">5 pts</span>
-                <span className="text-gray-400 dark:text-gray-600"> (6 si score unique)</span>
+                {" = "}<span className="font-black text-gray-900 dark:text-white">6 pts</span>
+                <span className="text-gray-400 dark:text-gray-600"> (7 si score unique)</span>
               </p>
             </div>
 
             {/* Note score */}
             <div className="text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/30 rounded-xl p-3">
-              <p className="font-semibold text-gray-600 dark:text-gray-400 mb-1">Le score saisi = score à 90 min</p>
+              <p className="font-semibold text-gray-600 dark:text-gray-400 mb-1">Quel score entrer ?</p>
               <ul className="space-y-0.5 list-disc list-inside">
-                <li>Si tu choisis <strong>90 min</strong> → score vainqueur (nul impossible)</li>
-                <li>Si tu choisis <strong>+</strong> → score nul à 90 min obligatoire. Le score à 120 min est pris en compte pour l&apos;exactitude.</li>
+                <li>Si tu choisis <strong>90 min</strong> → score à 90 min, nul impossible</li>
+                <li>Si tu choisis <strong>+</strong> → score à <strong>120 min</strong> (victoires et nuls valides). Seul le score à 120 min est comparé.</li>
               </ul>
             </div>
           </div>
@@ -218,6 +218,34 @@ function ReglesTab() {
             </p>
 
             <div className="space-y-3">
+              {/* Bonus multiplicateurs */}
+              <div className="rounded-xl border border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-950/20 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">⚡</span>
+                  <span className="font-bold text-sm text-gray-900 dark:text-white">Bonus ×2 et ×3</span>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  Chaque joueur dispose de <strong>3 bonus</strong> à placer sur les matchs de son choix, pour toute la compétition :
+                </p>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="rounded-lg bg-white dark:bg-gray-900 border border-orange-200 dark:border-orange-800/40 p-2 text-center">
+                    <div className="font-black text-lg text-orange-600 dark:text-orange-400">×2</div>
+                    <div className="text-[11px] font-semibold text-orange-700 dark:text-orange-500">2 disponibles</div>
+                    <div className="text-[11px] text-gray-400 dark:text-gray-600">Double les points</div>
+                  </div>
+                  <div className="rounded-lg bg-white dark:bg-gray-900 border border-red-200 dark:border-red-800/40 p-2 text-center">
+                    <div className="font-black text-lg text-red-600 dark:text-red-400">×3</div>
+                    <div className="text-[11px] font-semibold text-red-700 dark:text-red-500">1 disponible</div>
+                    <div className="text-[11px] text-gray-400 dark:text-gray-600">Triple les points</div>
+                  </div>
+                </div>
+                <ul className="space-y-0.5 text-[11px] text-gray-400 dark:text-gray-500 list-disc list-inside">
+                  <li>Placeable sur n&apos;importe quel match (groupes ou élimination)</li>
+                  <li>Modifiable jusqu&apos;au coup d&apos;envoi du match</li>
+                  <li>Si le score est 0 pt, le bonus ne change rien</li>
+                </ul>
+              </div>
+
               <div className="rounded-xl border border-gold-300 dark:border-gold-900/60 bg-amber-50/50 dark:bg-amber-950/20 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">🏆</span>
