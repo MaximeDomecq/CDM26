@@ -11,6 +11,7 @@ export interface PredictionEntry {
   displayName: string;
   prediction: { home_score: number; away_score: number } | null;
   knockoutPrediction: { qualifier_team: string | null; predicted_context: string | null } | null;
+  bonusMultiplier: number | null;
   points: number | null;
   tier: ScoreTier | KnockoutTier | null;
   isMe: boolean;
@@ -177,6 +178,11 @@ export default function LeagueMatchBreakdown({ breakdown }: Props) {
                           {entry.tier && entry.tier !== "wrong" && (
                             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${TIER_STYLE[entry.tier] ?? ""}`}>
                               {TIER_LABEL[entry.tier] ?? entry.tier}
+                            </span>
+                          )}
+                          {entry.bonusMultiplier && (
+                            <span className="text-xs font-black px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400">
+                              ×{entry.bonusMultiplier}
                             </span>
                           )}
                           {entry.points !== null && (

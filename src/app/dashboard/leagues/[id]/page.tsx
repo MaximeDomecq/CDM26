@@ -90,6 +90,7 @@ export default async function LeagueDetailPage({
     away_score: number;
     qualifier_team: string | null;
     predicted_context: string | null;
+    bonus_multiplier: number | null;
   }> = [];
   if (memberIds.length > 0 && lockedMatchIds.length > 0) {
     const PAGE = 1000;
@@ -97,7 +98,7 @@ export default async function LeagueDetailPage({
     while (true) {
       const { data: batch } = await supabase
         .from("predictions")
-        .select("user_id, match_id, home_score, away_score, qualifier_team, predicted_context")
+        .select("user_id, match_id, home_score, away_score, qualifier_team, predicted_context, bonus_multiplier")
         .in("user_id", memberIds)
         .in("match_id", lockedMatchIds)
         .order("id")
@@ -188,11 +189,12 @@ export default async function LeagueDetailPage({
 
       if (!isKO) {
         // Phase de groupes
+        const multiplier = pred.bonus_multiplier ?? 1;
         const pts = calculatePoints(
           { home_score: pred.home_score, away_score: pred.away_score },
           { home_score: match.home_score, away_score: match.away_score },
           uniqueExact
-        );
+        ) * multiplier;
         matchPoints += pts;
         const tier = getTier(
           { home_score: pred.home_score, away_score: pred.away_score },
@@ -221,7 +223,7 @@ export default async function LeagueDetailPage({
           winner_team: match.winner_team,
         };
         const breakdown = calculateKnockoutPoints(koPred, koResult, uniqueExact);
-        matchPoints += breakdown.total;
+        matchPoints += breakdown.total * (pred.bonus_multiplier ?? 1);
         if (breakdown.tier === "exact") exactCount++;
         else if (breakdown.tier === "goal_diff") goalDiffCount++;
         else if (breakdown.tier === "total_goals") totalGoalsCount++;
@@ -268,13 +270,15 @@ export default async function LeagueDetailPage({
       let tier = null;
       const uniqueExact = exactList.length === 1 && exactList[0] === member.userId;
 
+      const multiplier = pred?.bonus_multiplier ?? 1;
+
       if (pred && isFinished) {
         if (!isKO) {
           points = calculatePoints(
             { home_score: pred.home_score, away_score: pred.away_score },
             { home_score: match.home_score!, away_score: match.away_score! },
             uniqueExact
-          );
+          ) * multiplier;
           tier = getTier(
             { home_score: pred.home_score, away_score: pred.away_score },
             { home_score: match.home_score!, away_score: match.away_score! }
@@ -295,7 +299,7 @@ export default async function LeagueDetailPage({
             winner_team: match.winner_team,
           };
           const bd = calculateKnockoutPoints(koPred, koResult, uniqueExact);
-          points = bd.total;
+          points = bd.total * multiplier;
           tier = bd.tier;
         }
       }
@@ -308,6 +312,7 @@ export default async function LeagueDetailPage({
           qualifier_team: pred.qualifier_team,
           predicted_context: pred.predicted_context,
         } : null,
+        bonusMultiplier: pred?.bonus_multiplier ?? null,
         points,
         tier,
         isMe: member.userId === user!.id,

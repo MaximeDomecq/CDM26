@@ -98,7 +98,7 @@ export type KnockoutTier = "exact" | "goal_diff" | "total_goals" | "wrong";
 
 export interface KnockoutBreakdown {
   total: number;
-  qualifierPts: number;  // 0 ou 1
+  qualifierPts: number;  // 0 ou 2
   contextPts: number;    // 0 ou 1
   scorePts: number;      // 0, 1, 2, 3 ou 4 (3+1 si unique)
   tier: KnockoutTier;
@@ -112,7 +112,7 @@ export function calculateKnockoutPoints(
   // Contexte réel : '90min' si victoire en temps réglementaire, '+' sinon (prol ou tab)
   const resultContext: "90min" | "+" = result.match_end_type === "90min" ? "90min" : "+";
 
-  const qualifierPts = prediction.qualifier_team === result.winner_team ? 1 : 0;
+  const qualifierPts = prediction.qualifier_team === result.winner_team ? 2 : 0;
   const contextPts = prediction.predicted_context === resultContext ? 1 : 0;
 
   // Score à comparer selon le contexte prédit

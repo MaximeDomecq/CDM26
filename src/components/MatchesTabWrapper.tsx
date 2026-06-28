@@ -29,6 +29,7 @@ interface Prediction {
   away_score: number;
   qualifier_team: string | null;
   predicted_context: string | null;
+  bonus_multiplier: number | null;
 }
 
 interface CalendarMatch {
@@ -268,7 +269,7 @@ function ResultsView({ matches, predictions }: { matches: Match[]; predictions: 
     const pred = predMap.get(m.id);
     const result = { home_score: m.home_score!, away_score: m.away_score! };
     const tier = pred ? getTier(pred, result) : null;
-    const pts = pred ? calculatePoints(pred, result) : 0;
+    const pts = pred ? calculatePoints(pred, result) * (pred.bonus_multiplier ?? 1) : 0;
     return { ...m, pred, tier, pts };
   });
 

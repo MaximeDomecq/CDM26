@@ -40,6 +40,7 @@ interface Prediction {
   away_score: number;
   qualifier_team: string | null;
   predicted_context: string | null;
+  bonus_multiplier: number | null;
 }
 
 interface Props {
@@ -48,6 +49,9 @@ interface Props {
   locked: boolean;
   userId: string;
   freshScore?: boolean;
+  usedX2: number;
+  usedX3: number;
+  onBonusChange: (bonus: number | null) => void;
 }
 
 const TIER_CONFIG = {
@@ -71,7 +75,7 @@ const END_TYPE_LABEL: Record<string, string> = {
   pens: "T.A.B.",
 };
 
-export default function MatchCard({ match, prediction, locked, userId, freshScore = false }: Props) {
+export default function MatchCard({ match, prediction, locked, userId, freshScore = false, usedX2, usedX3, onBonusChange }: Props) {
   const isKnockout = isKnockoutPhase(match.phase);
 
   // Group stage state
@@ -84,6 +88,9 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
     (prediction?.predicted_context as "90min" | "+" | "") ?? ""
   );
 
+  // Bonus state
+  const [bonus, setBonus] = useState<number | null>(prediction?.bonus_multiplier ?? null);
+
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
 
@@ -92,6 +99,7 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
   const [savedAway, setSavedAway] = useState<number | null>(prediction?.away_score ?? null);
   const [savedQualifier, setSavedQualifier] = useState<string | null>(prediction?.qualifier_team ?? null);
   const [savedContext, setSavedContext] = useState<string | null>(prediction?.predicted_context ?? null);
+  const [savedBonus, setSavedBonus] = useState<number | null>(prediction?.bonus_multiplier ?? null);
 
   // Countdown + dynamic lock
   const [secondsLeft, setSecondsLeft] = useState(() => {
@@ -130,10 +138,17 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
   const homeNum = parseInt(home);
   const awayNum = parseInt(away);
   const scoreIsValid = home !== "" && away !== "" && !isNaN(homeNum) && !isNaN(awayNum);
-  const contextScoreConflict = isKnockout && scoreIsValid && context !== ""
-    ? (context === "90min" && homeNum === awayNum)
-    || (context === "+" && homeNum !== awayNum)
+  // Only conflict: 90min context with a draw (knockout in 90min can't end in a draw)
+  // "+" context: user enters 120min score → draw or win are both valid
+  const contextScoreConflict = isKnockout && scoreIsValid && context === "90min"
+    ? homeNum === awayNum
     : false;
+
+  // Bonus availability
+  const canSelectX2 = 2 - usedX2 + (savedBonus === 2 ? 1 : 0) > 0;
+  const canSelectX3 = 1 - usedX3 + (savedBonus === 3 ? 1 : 0) > 0;
+  const displayRemainingX2 = Math.max(0, 2 - usedX2 + (savedBonus === 2 ? 1 : 0));
+  const displayRemainingX3 = Math.max(0, 1 - usedX3 + (savedBonus === 3 ? 1 : 0));
   const knockoutCanSave = isKnockout
     ? !!qualifier && !!context && scoreIsValid && !contextScoreConflict
     : scoreIsValid;
@@ -151,7 +166,7 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
         { home_score: savedHome!, away_score: savedAway! },
         { home_score: match.home_score!, away_score: match.away_score! },
         false
-      )
+      ) * (savedBonus ?? 1)
     : null;
 
   // Scoring — knockout
@@ -191,6 +206,7 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
       match_id: match.id,
       home_score: h,
       away_score: a,
+      bonus_multiplier: bonus ?? null,
     };
     if (isKnockout) {
       payload.qualifier_team = qualifier;
@@ -209,6 +225,8 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
         setSavedQualifier(qualifier);
         setSavedContext(context);
       }
+      setSavedBonus(bonus);
+      onBonusChange(bonus);
       setJustSaved(true);
       setTimeout(() => setJustSaved(false), 3000);
     }
@@ -366,14 +384,19 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
                     {KNOCKOUT_TIER_CONFIG[knockoutBreakdown.tier].label}
                   </span>
                 )}
+                {savedBonus && (
+                  <span className="text-xs font-black px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400">
+                    ×{savedBonus}
+                  </span>
+                )}
                 <span className="font-black text-lg text-gray-900 dark:text-white">
-                  {knockoutBreakdown.total > 0 ? `+${knockoutBreakdown.total}` : "0"} pts
+                  {knockoutBreakdown.total * (savedBonus ?? 1) > 0 ? `+${knockoutBreakdown.total * (savedBonus ?? 1)}` : "0"} pts
                 </span>
               </div>
               {/* Breakdown ligne */}
               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 flex-wrap justify-center">
                 <span className={knockoutBreakdown.qualifierPts > 0 ? "text-emerald-600 dark:text-emerald-400 font-bold" : "line-through"}>
-                  {flag(savedQualifier ?? "")} Qualifié {knockoutBreakdown.qualifierPts > 0 ? "+1" : "✗"}
+                  {flag(savedQualifier ?? "")} Qualifié {knockoutBreakdown.qualifierPts > 0 ? "+2" : "✗"}
                 </span>
                 <span className="text-gray-300 dark:text-gray-700">·</span>
                 <span className={knockoutBreakdown.contextPts > 0 ? "text-emerald-600 dark:text-emerald-400 font-bold" : "line-through"}>
@@ -397,6 +420,9 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
                 <span>{savedContext === "90min" ? "90 min" : "+"}</span>
                 <span className="text-gray-400 dark:text-gray-600 font-normal mx-0.5">·</span>
                 <span className="tabular-nums">{savedHome}–{savedAway}</span>
+                {savedBonus && (
+                  <span className="text-purple-600 dark:text-purple-400 font-black">×{savedBonus}</span>
+                )}
               </span>
               <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
                 En attente
@@ -485,12 +511,11 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
                     </div>
                   </div>
 
-                  {/* 3. Score 90 min */}
+                  {/* 3. Score */}
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">
-                      Score à 90 min
-                      {context === "90min" && <span className="normal-case font-normal ml-1">(vainqueur uniquement)</span>}
-                      {context === "+" && <span className="normal-case font-normal ml-1">(match nul uniquement)</span>}
+                      Score à {context === "+" ? "120 min" : "90 min"}
+                      {context === "90min" && <span className="normal-case font-normal ml-1">(sans match nul)</span>}
                     </p>
                     <div className="flex items-center gap-2">
                       <input
@@ -519,46 +544,57 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
                         {saving ? "…" : hasSavedPrediction ? "Modifier" : "Valider"}
                       </button>
                     </div>
-                    {/* Avertissement de cohérence */}
                     {contextScoreConflict && (
                       <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
-                        {context === "90min"
-                          ? "Score nul impossible si victoire en 90 min"
-                          : "Le score à 90 min doit être un match nul"}
+                        Score nul impossible si victoire en temps réglementaire
                       </p>
                     )}
                   </div>
+
+                  {/* 4. Joker (optionnel) */}
+                  <BonusSelector
+                    bonus={bonus} setBonus={setBonus}
+                    canSelectX2={canSelectX2} canSelectX3={canSelectX3}
+                    displayRemainingX2={displayRemainingX2} displayRemainingX3={displayRemainingX3}
+                  />
                 </div>
               )}
 
               {/* ── Saisie GROUPE ── */}
               {!isKnockout && (
-                <div className="flex items-center justify-center gap-2">
-                  <input
-                    type="number" min={0} max={20} value={home}
-                    onChange={(e) => setHome(e.target.value)}
-                    placeholder="0"
-                    className="w-14 text-center border border-gray-200 dark:border-gray-700 rounded-xl py-2 text-lg font-black bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-center gap-2">
+                    <input
+                      type="number" min={0} max={20} value={home}
+                      onChange={(e) => setHome(e.target.value)}
+                      placeholder="0"
+                      className="w-14 text-center border border-gray-200 dark:border-gray-700 rounded-xl py-2 text-lg font-black bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                    />
+                    <span className="text-gray-400 dark:text-gray-600 font-black text-xl">–</span>
+                    <input
+                      type="number" min={0} max={20} value={away}
+                      onChange={(e) => setAway(e.target.value)}
+                      placeholder="0"
+                      className="w-14 text-center border border-gray-200 dark:border-gray-700 rounded-xl py-2 text-lg font-black bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                    />
+                    <button
+                      onClick={save}
+                      disabled={saving || home === "" || away === ""}
+                      className={clsx(
+                        "px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-40",
+                        hasSavedPrediction
+                          ? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                          : "bg-brand-600 hover:bg-brand-700 text-white"
+                      )}
+                    >
+                      {saving ? "…" : hasSavedPrediction ? "Modifier" : "Valider"}
+                    </button>
+                  </div>
+                  <BonusSelector
+                    bonus={bonus} setBonus={setBonus}
+                    canSelectX2={canSelectX2} canSelectX3={canSelectX3}
+                    displayRemainingX2={displayRemainingX2} displayRemainingX3={displayRemainingX3}
                   />
-                  <span className="text-gray-400 dark:text-gray-600 font-black text-xl">–</span>
-                  <input
-                    type="number" min={0} max={20} value={away}
-                    onChange={(e) => setAway(e.target.value)}
-                    placeholder="0"
-                    className="w-14 text-center border border-gray-200 dark:border-gray-700 rounded-xl py-2 text-lg font-black bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                  />
-                  <button
-                    onClick={save}
-                    disabled={saving || home === "" || away === ""}
-                    className={clsx(
-                      "px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-40",
-                      hasSavedPrediction
-                        ? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                        : "bg-brand-600 hover:bg-brand-700 text-white"
-                    )}
-                  >
-                    {saving ? "…" : hasSavedPrediction ? "Modifier" : "Valider"}
-                  </button>
                 </div>
               )}
             </>
@@ -590,6 +626,72 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
           )}
 
         </div>
+      </div>
+    </div>
+  );
+}
+
+interface BonusSelectorProps {
+  bonus: number | null;
+  setBonus: (b: number | null) => void;
+  canSelectX2: boolean;
+  canSelectX3: boolean;
+  displayRemainingX2: number;
+  displayRemainingX3: number;
+}
+
+function BonusSelector({ bonus, setBonus, canSelectX2, canSelectX3, displayRemainingX2, displayRemainingX3 }: BonusSelectorProps) {
+  return (
+    <div>
+      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">
+        Joker <span className="normal-case font-normal">(optionnel — multiplie tous les points)</span>
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => setBonus(null)}
+          className={clsx(
+            "flex-1 py-1.5 px-2 rounded-xl border text-xs font-bold transition-all",
+            bonus === null
+              ? "border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+              : "border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-600 hover:border-gray-300"
+          )}
+        >
+          — Aucun
+        </button>
+        <button
+          onClick={() => canSelectX2 && setBonus(bonus === 2 ? null : 2)}
+          disabled={!canSelectX2}
+          className={clsx(
+            "flex-1 py-1.5 px-2 rounded-xl border text-xs font-bold transition-all",
+            bonus === 2
+              ? "border-purple-500 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400"
+              : canSelectX2
+              ? "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-purple-300 dark:hover:border-purple-700"
+              : "border-gray-100 dark:border-gray-800 text-gray-300 dark:text-gray-700 cursor-not-allowed"
+          )}
+        >
+          ×2
+          <span className="ml-1 font-normal opacity-70">
+            ({displayRemainingX2} restant{displayRemainingX2 !== 1 ? "s" : ""})
+          </span>
+        </button>
+        <button
+          onClick={() => canSelectX3 && setBonus(bonus === 3 ? null : 3)}
+          disabled={!canSelectX3}
+          className={clsx(
+            "flex-1 py-1.5 px-2 rounded-xl border text-xs font-bold transition-all",
+            bonus === 3
+              ? "border-purple-500 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400"
+              : canSelectX3
+              ? "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-purple-300 dark:hover:border-purple-700"
+              : "border-gray-100 dark:border-gray-800 text-gray-300 dark:text-gray-700 cursor-not-allowed"
+          )}
+        >
+          ×3
+          <span className="ml-1 font-normal opacity-70">
+            ({displayRemainingX3} restant{displayRemainingX3 !== 1 ? "s" : ""})
+          </span>
+        </button>
       </div>
     </div>
   );

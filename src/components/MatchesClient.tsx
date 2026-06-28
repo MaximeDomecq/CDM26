@@ -27,6 +27,7 @@ interface Prediction {
   away_score: number;
   qualifier_team: string | null;
   predicted_context: string | null;
+  bonus_multiplier: number | null;
 }
 
 interface Props {
@@ -46,6 +47,13 @@ export default function MatchesClient({ matches, predictions, userId, favoriteTe
     () => new Map(predictions.map((p) => [p.match_id, p])),
     [predictions]
   );
+
+  // Bonus tracking — updated reactively when MatchCard saves
+  const [bonusAlloc, setBonusAlloc] = useState<Record<string, number | null>>(() =>
+    Object.fromEntries(predictions.map((p) => [p.match_id, p.bonus_multiplier ?? null]))
+  );
+  const usedX2 = useMemo(() => Object.values(bonusAlloc).filter((b) => b === 2).length, [bonusAlloc]);
+  const usedX3 = useMemo(() => Object.values(bonusAlloc).filter((b) => b === 3).length, [bonusAlloc]);
 
   const now = useRef(new Date()).current;
 
@@ -98,6 +106,11 @@ export default function MatchesClient({ matches, predictions, userId, favoriteTe
             locked={parseISO(m.kickoff_at) <= now || m.home_score !== null}
             userId={userId}
             freshScore={newScoreIds?.has(m.id) ?? false}
+            usedX2={usedX2}
+            usedX3={usedX3}
+            onBonusChange={(newBonus) =>
+              setBonusAlloc((prev) => ({ ...prev, [m.id]: newBonus }))
+            }
           />
         ))}
       </div>
