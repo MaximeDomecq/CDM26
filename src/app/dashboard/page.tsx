@@ -32,13 +32,15 @@ export default async function DashboardPage() {
   ]);
 
   const predictionSet = new Set((predictions ?? []).map((p) => p.match_id));
-  const totalMatches = matches?.length ?? 0;
-  const predictedCount = (matches ?? []).filter((m) => predictionSet.has(m.id)).length;
-  const completionPct = totalMatches > 0 ? Math.round((predictedCount / totalMatches) * 100) : 0;
 
-  const upcomingMatches = (matches ?? [])
-    .filter((m) => new Date(m.kickoff_at) > now)
-    .slice(0, 4);
+  // Compteur : seulement les matchs à venir (non commencés)
+  const futureMatches = (matches ?? []).filter((m) => new Date(m.kickoff_at) > now);
+  const totalFuture = futureMatches.length;
+  const predictedFutureCount = futureMatches.filter((m) => predictionSet.has(m.id)).length;
+  const missingCount = totalFuture - predictedFutureCount;
+  const completionPct = totalFuture > 0 ? Math.round((predictedFutureCount / totalFuture) * 100) : 100;
+
+  const upcomingMatches = futureMatches.slice(0, 4);
 
   const liveOrRecentMatches = (matches ?? []).filter((m) => {
     const diff = (now.getTime() - new Date(m.kickoff_at).getTime()) / 1000 / 60;
@@ -91,7 +93,7 @@ export default async function DashboardPage() {
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card px-5 py-4">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Pronostics</span>
-          <span className="text-sm font-black text-brand-600 dark:text-brand-400">{predictedCount} / {totalMatches}</span>
+          <span className="text-sm font-black text-brand-600 dark:text-brand-400">{predictedFutureCount} / {totalFuture} à venir</span>
         </div>
         <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
           <div
@@ -99,12 +101,12 @@ export default async function DashboardPage() {
             style={{ width: `${completionPct}%` }}
           />
         </div>
-        {predictedCount < totalMatches ? (
+        {missingCount > 0 ? (
           <p className="text-xs text-gray-400 dark:text-gray-600 mt-2">
-            {totalMatches - predictedCount} match{totalMatches - predictedCount > 1 ? "s" : ""} sans pronostic
+            {missingCount} match{missingCount > 1 ? "s" : ""} à venir sans pronostic
           </p>
         ) : (
-          <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-2 font-semibold">Tous les pronostics complétés ✓</p>
+          <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-2 font-semibold">Tous les pronostics à venir complétés ✓</p>
         )}
       </div>
 
@@ -114,12 +116,13 @@ export default async function DashboardPage() {
           href="/dashboard/matches"
           emoji="⚽"
           title="Pronostics"
-          badge={totalMatches - predictedCount > 0 ? `${totalMatches - predictedCount} à faire` : undefined}
-          badgeGreen={predictedCount === totalMatches}
+          badge={missingCount > 0 ? `${missingCount} à faire` : undefined}
+          badgeGreen={missingCount === 0}
         />
         <NavCard href="/dashboard/leagues" emoji="🏆" title="Mes ligues" />
         <NavCard href="/dashboard/groupes" emoji="📊" title="Groupes" />
         <NavCard href="/dashboard/profile" emoji="🎯" title="Mon profil" />
+        <NavCard href="/dashboard/regles" emoji="📋" title="Règles du jeu" />
       </div>
 
       {/* Upcoming matches */}

@@ -38,6 +38,7 @@ export default async function DashboardLayout({
             <NavLink href="/dashboard/matches">⚽ Matchs</NavLink>
             <NavLink href="/dashboard/groupes">📊 Compétition</NavLink>
             <NavLink href="/dashboard/leagues">🏆 Ligues</NavLink>
+            <NavLink href="/dashboard/regles">📋 Règles</NavLink>
             <div className="w-px h-5 bg-white/20 mx-1 flex-shrink-0" />
             <Link
               href="/dashboard/profile"
