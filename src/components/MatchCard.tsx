@@ -145,9 +145,9 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
     : false;
 
   // Bonus availability
-  const canSelectX2 = 2 - usedX2 + (savedBonus === 2 ? 1 : 0) > 0;
+  const canSelectX2 = 1 - usedX2 + (savedBonus === 2 ? 1 : 0) > 0;
   const canSelectX3 = 1 - usedX3 + (savedBonus === 3 ? 1 : 0) > 0;
-  const displayRemainingX2 = Math.max(0, 2 - usedX2 + (savedBonus === 2 ? 1 : 0));
+  const displayRemainingX2 = Math.max(0, 1 - usedX2 + (savedBonus === 2 ? 1 : 0));
   const displayRemainingX3 = Math.max(0, 1 - usedX3 + (savedBonus === 3 ? 1 : 0));
   const knockoutCanSave = isKnockout
     ? !!qualifier && !!context && scoreIsValid && !contextScoreConflict

@@ -230,7 +230,7 @@ function ReglesTab() {
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   <div className="rounded-lg bg-white dark:bg-gray-900 border border-orange-200 dark:border-orange-800/40 p-2 text-center">
                     <div className="font-black text-lg text-orange-600 dark:text-orange-400">×2</div>
-                    <div className="text-[11px] font-semibold text-orange-700 dark:text-orange-500">2 disponibles</div>
+                    <div className="text-[11px] font-semibold text-orange-700 dark:text-orange-500">1 disponible</div>
                     <div className="text-[11px] text-gray-400 dark:text-gray-600">Double les points</div>
                   </div>
                   <div className="rounded-lg bg-white dark:bg-gray-900 border border-red-200 dark:border-red-800/40 p-2 text-center">
