@@ -5,6 +5,7 @@ import LeagueMatchBreakdown from "./LeagueMatchBreakdown";
 import LeagueChat from "./LeagueChat";
 import PlayerProfileModal from "./PlayerProfileModal";
 import type { MatchBreakdownItem } from "./LeagueMatchBreakdown";
+import { flag } from "@/lib/teams";
 
 interface LeaderboardEntry {
   userId: string;
@@ -299,7 +300,195 @@ function ReglesTab() {
     </div>
   );
 }
-type PronoTab = "en-cours" | "termines";
+const TIER_STYLE: Record<string, string> = {
+  exact:          "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400",
+  goal_diff:      "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400",
+  correct_winner: "bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-400",
+  total_goals:    "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400",
+  wrong:          "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500",
+};
+
+const TIER_LABEL: Record<string, string> = {
+  exact:          "Score exact ✓",
+  goal_diff:      "Différence",
+  correct_winner: "Résultat",
+  total_goals:    "Total buts",
+  wrong:          "Raté",
+};
+
+type PronoTab = "en-cours" | "termines" | "par-joueur";
+
+function ParJoueurView({
+  leaderboard,
+  breakdownTermines,
+  currentUserId,
+}: {
+  leaderboard: LeaderboardEntry[];
+  breakdownTermines: MatchBreakdownItem[];
+  currentUserId: string;
+}) {
+  const [openUserId, setOpenUserId] = useState<string | null>(null);
+
+  if (breakdownTermines.length === 0) {
+    return (
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card p-8 text-center">
+        <p className="text-gray-400 dark:text-gray-600 text-sm">
+          Aucun match terminé pour l&apos;instant.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {leaderboard.map((player, rank) => {
+        const isOpen = openUserId === player.userId;
+        const isMe = player.userId === currentUserId;
+
+        const matchRows = breakdownTermines.map((match) => ({
+          match,
+          entry: match.entries.find((e) => e.userId === player.userId) ?? null,
+        }));
+
+        const predCount = matchRows.filter((r) => r.entry?.prediction !== null).length;
+
+        return (
+          <div
+            key={player.userId}
+            className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-card overflow-hidden"
+          >
+            <button
+              onClick={() => setOpenUserId(isOpen ? null : player.userId)}
+              className={`w-full px-5 py-4 flex items-center justify-between gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left ${isMe ? "bg-brand-50 dark:bg-brand-950/20" : ""}`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-6 text-base text-center flex-shrink-0">
+                  {rank === 0 ? "🥇" : rank === 1 ? "🥈" : rank === 2 ? "🥉" : <span className="font-bold text-gray-400 dark:text-gray-600 text-sm">{rank + 1}</span>}
+                </span>
+                <span
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-[11px] flex-shrink-0"
+                  style={{ background: player.avatarColor }}
+                >
+                  {player.displayName.trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                </span>
+                <div className="min-w-0">
+                  <div className="font-bold text-sm text-gray-900 dark:text-white">
+                    {player.displayName}
+                    {isMe && <span className="ml-1.5 text-xs text-brand-500 dark:text-brand-400 font-medium">(vous)</span>}
+                  </div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500">
+                    {predCount}/{breakdownTermines.length} pronos
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="font-black text-brand-600 dark:text-brand-400 text-base">
+                  {player.matchPoints} pts
+                </span>
+                <span
+                  className="text-gray-400 dark:text-gray-600 text-xs"
+                  style={{ display: "inline-block", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}
+                >
+                  ▾
+                </span>
+              </div>
+            </button>
+
+            {isOpen && (
+              <div className="border-t border-gray-100 dark:border-gray-800 divide-y divide-gray-50 dark:divide-gray-800/50">
+                {matchRows.map(({ match, entry }) => {
+                  const isKO = !match.phase.startsWith("Groupe");
+                  const breakdown = entry?.knockoutBreakdown ?? null;
+
+                  return (
+                    <div key={match.matchId} className="px-5 py-3">
+                      {/* Match header */}
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1 flex-wrap">
+                          <span>{flag(match.homeTeam)}</span>
+                          <span>{match.homeTeam}</span>
+                          <span className="font-black text-gray-900 dark:text-white px-0.5">
+                            {match.homeScore}–{match.awayScore}
+                          </span>
+                          <span>{match.awayTeam}</span>
+                          <span>{flag(match.awayTeam)}</span>
+                          {isKO && match.winnerTeam && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400">
+                              {flag(match.winnerTeam)} {match.winnerTeam}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 flex-shrink-0">{match.phase}</span>
+                      </div>
+
+                      {/* Prediction + breakdown */}
+                      {entry?.prediction ? (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {/* Score prédit */}
+                          {isKO && entry.knockoutPrediction ? (
+                            <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1 mr-1">
+                              {entry.knockoutPrediction.qualifier_team && <>{flag(entry.knockoutPrediction.qualifier_team)}</>}
+                              <span className="text-gray-400 dark:text-gray-500">{entry.knockoutPrediction.predicted_context === "90min" ? "90m" : "+"}</span>
+                              <span>{entry.prediction.home_score}–{entry.prediction.away_score}</span>
+                            </span>
+                          ) : (
+                            <span className="font-mono font-black text-sm text-gray-900 dark:text-white mr-1">
+                              {entry.prediction.home_score}–{entry.prediction.away_score}
+                            </span>
+                          )}
+
+                          {/* Phase de groupes: tier badge */}
+                          {!isKO && entry.tier && (
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${TIER_STYLE[entry.tier] ?? TIER_STYLE.wrong}`}>
+                              {TIER_LABEL[entry.tier] ?? entry.tier}
+                            </span>
+                          )}
+
+                          {/* Phase KO: détail breakdown */}
+                          {isKO && breakdown && (
+                            <>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${breakdown.qualifierPts > 0 ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400" : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"}`}>
+                                {breakdown.qualifierPts > 0 ? "✓" : "✗"} Qual. +{breakdown.qualifierPts}
+                              </span>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${breakdown.contextPts > 0 ? "bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-400" : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"}`}>
+                                {breakdown.contextPts > 0 ? "✓" : "✗"} Ctx. +{breakdown.contextPts}
+                              </span>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${breakdown.scorePts > 0 ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400" : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"}`}>
+                                Score +{breakdown.scorePts}
+                              </span>
+                            </>
+                          )}
+
+                          {entry.bonusMultiplier && entry.bonusMultiplier > 1 && (
+                            <span className="text-xs font-black px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400">
+                              ×{entry.bonusMultiplier}
+                            </span>
+                          )}
+
+                          {entry.isUniqueExact && (
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
+                              ⭐ Unique
+                            </span>
+                          )}
+
+                          <span className="font-black text-brand-600 dark:text-brand-400 text-sm ml-auto">
+                            +{entry.points ?? 0} pts
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400 dark:text-gray-600 italic">Pas de prono</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function LeagueTabs({
   leaderboard, breakdownEnCours, breakdownTermines, leagueId, currentUserId, currentDisplayName,
@@ -433,10 +622,11 @@ export default function LeagueTabs({
       {/* Pronostics */}
       {tab === "pronostics" && (
         <div className="space-y-4">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {([
               { id: "en-cours" as PronoTab, label: "En cours", count: breakdownEnCours.length },
               { id: "termines" as PronoTab, label: "Terminés", count: breakdownTermines.length },
+              { id: "par-joueur" as PronoTab, label: "Par joueur", count: null },
             ]).map((t) => (
               <button
                 key={t.id}
@@ -448,7 +638,7 @@ export default function LeagueTabs({
                 }`}
               >
                 {t.label}
-                {t.count > 0 && (
+                {t.count !== null && t.count > 0 && (
                   <span className="ml-1.5 text-xs font-bold opacity-60">({t.count})</span>
                 )}
               </button>
@@ -477,6 +667,14 @@ export default function LeagueTabs({
             ) : (
               <LeagueMatchBreakdown breakdown={breakdownTermines} />
             )
+          )}
+
+          {pronoTab === "par-joueur" && (
+            <ParJoueurView
+              leaderboard={leaderboard}
+              breakdownTermines={breakdownTermines}
+              currentUserId={currentUserId}
+            />
           )}
         </div>
       )}
