@@ -134,8 +134,8 @@ export function calculateKnockoutPoints(
   let tier: KnockoutTier = "wrong";
   let scorePts = 0;
 
-  // Les points de score (exact / diff) ne sont attribués que si le qualifié est correct
-  if (qualifierPts > 0) {
+  // Les points de score (exact / diff) ne sont attribués que si le qualifié ET le contexte sont corrects
+  if (qualifierPts > 0 && contextPts > 0) {
     if (isExact) {
       tier = "exact";
       scorePts = 3 + (isUniqueExact ? 1 : 0);
