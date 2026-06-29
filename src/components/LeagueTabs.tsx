@@ -225,7 +225,7 @@ function ReglesTab() {
                   <span className="font-bold text-sm text-gray-900 dark:text-white">Bonus ×2 et ×3</span>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                  Chaque joueur dispose de <strong>3 bonus</strong> à placer sur les matchs de son choix, pour toute la compétition :
+                  Chaque joueur dispose de <strong>2 bonus</strong> à placer sur les matchs de son choix, pour toute la compétition :
                 </p>
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   <div className="rounded-lg bg-white dark:bg-gray-900 border border-orange-200 dark:border-orange-800/40 p-2 text-center">

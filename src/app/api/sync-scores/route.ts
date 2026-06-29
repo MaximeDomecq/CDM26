@@ -118,9 +118,15 @@ export async function GET(req: NextRequest) {
     matches: {
       utcDate: string;
       status: string;
+      stage: string;
       homeTeam: { name: string };
       awayTeam: { name: string };
-      score: { fullTime: { home: number | null; away: number | null } };
+      score: {
+        winner: "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null;
+        duration: "REGULAR" | "EXTRA_TIME" | "PENALTY_SHOOTOUT" | null;
+        fullTime: { home: number | null; away: number | null };
+        extraTime: { home: number | null; away: number | null } | null;
+      };
     }[]
   };
 
@@ -128,7 +134,6 @@ export async function GET(req: NextRequest) {
   let skipped = 0;
 
   for (const m of matches) {
-    // Only update finished matches with real scores
     if (m.status !== "FINISHED") continue;
     const { home, away } = m.score.fullTime;
     if (home === null || away === null) continue;
@@ -142,12 +147,28 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    const { error } = await supabase
-      .from("matches")
-      .update({ home_score: home, away_score: away })
-      .eq("home_team", homeFr)
-      .eq("away_team", awayFr)
-      .is("home_score", null); // only update if not already set (avoid redundant writes)
+    const isKO = m.stage !== "GROUP_STAGE";
+
+    const fields: Record<string, unknown> = { home_score: home, away_score: away };
+
+    if (isKO) {
+      // winner_team
+      if (m.score.winner === "HOME_TEAM") fields.winner_team = homeFr;
+      else if (m.score.winner === "AWAY_TEAM") fields.winner_team = awayFr;
+
+      // match_end_type
+      if (m.score.duration === "REGULAR") fields.match_end_type = "90min";
+      else if (m.score.duration === "EXTRA_TIME") fields.match_end_type = "aet";
+      else if (m.score.duration === "PENALTY_SHOOTOUT") fields.match_end_type = "pens";
+
+      // extra time scores (cumulative at 120min)
+      fields.extra_time_home_score = m.score.extraTime?.home ?? null;
+      fields.extra_time_away_score = m.score.extraTime?.away ?? null;
+    }
+
+    // Group matches: skip if already set. KO matches: always upsert (winner_team may be missing).
+    const query = supabase.from("matches").update(fields).eq("home_team", homeFr).eq("away_team", awayFr);
+    const { error } = await (isKO ? query : query.is("home_score", null));
 
     if (!error) updated++;
   }
