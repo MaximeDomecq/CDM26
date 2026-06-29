@@ -268,6 +268,7 @@ export default async function LeagueDetailPage({
       );
       let points: number | null = null;
       let tier = null;
+      let knockdownBreakdown: { qualifierPts: number; contextPts: number; scorePts: number } | null = null;
       const uniqueExact = exactList.length === 1 && exactList[0] === member.userId;
 
       const multiplier = pred?.bonus_multiplier ?? 1;
@@ -301,6 +302,7 @@ export default async function LeagueDetailPage({
           const bd = calculateKnockoutPoints(koPred, koResult, uniqueExact);
           points = bd.total * multiplier;
           tier = bd.tier;
+          knockdownBreakdown = { qualifierPts: bd.qualifierPts, contextPts: bd.contextPts, scorePts: bd.scorePts };
         }
       }
 
@@ -312,6 +314,7 @@ export default async function LeagueDetailPage({
           qualifier_team: pred.qualifier_team,
           predicted_context: pred.predicted_context,
         } : null,
+        knockoutBreakdown: knockdownBreakdown,
         bonusMultiplier: pred?.bonus_multiplier ?? null,
         points,
         tier,
