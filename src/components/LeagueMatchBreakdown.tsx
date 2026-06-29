@@ -11,6 +11,7 @@ export interface PredictionEntry {
   displayName: string;
   prediction: { home_score: number; away_score: number } | null;
   knockoutPrediction: { qualifier_team: string | null; predicted_context: string | null } | null;
+  knockoutBreakdown: { qualifierPts: number; contextPts: number; scorePts: number } | null;
   bonusMultiplier: number | null;
   points: number | null;
   tier: ScoreTier | KnockoutTier | null;
@@ -142,59 +143,79 @@ export default function LeagueMatchBreakdown({ breakdown }: Props) {
                 {item.entries.map((entry) => (
                   <div
                     key={entry.userId}
-                    className={`px-5 py-3 flex items-center justify-between gap-3 ${
-                      entry.isMe ? "bg-brand-50 dark:bg-brand-950/20" : ""
-                    }`}
+                    className={`px-5 py-3 ${entry.isMe ? "bg-brand-50 dark:bg-brand-950/20" : ""}`}
                   >
-                    <span className="font-semibold text-sm text-gray-900 dark:text-white truncate">
-                      {entry.displayName}
-                      {entry.isMe && (
-                        <span className="ml-1.5 text-xs text-brand-500 dark:text-brand-400 font-medium">(vous)</span>
-                      )}
-                    </span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                        {entry.displayName}
+                        {entry.isMe && (
+                          <span className="ml-1.5 text-xs text-brand-500 dark:text-brand-400 font-medium">(vous)</span>
+                        )}
+                      </span>
 
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {entry.prediction ? (
-                        <>
-                          {/* Knockout: afficher qualifier + context + score */}
-                          {isKO && entry.knockoutPrediction ? (
-                            <span className="font-mono font-bold text-xs text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                              {entry.knockoutPrediction.qualifier_team && (
-                                <>{flag(entry.knockoutPrediction.qualifier_team)}</>
-                              )}
-                              <span className="text-gray-400 dark:text-gray-500">
-                                {entry.knockoutPrediction.predicted_context === "90min" ? "90m" : "+"}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {entry.prediction ? (
+                          <>
+                            {isKO && entry.knockoutPrediction ? (
+                              <span className="font-mono font-bold text-xs text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                                {entry.knockoutPrediction.qualifier_team && (
+                                  <>{flag(entry.knockoutPrediction.qualifier_team)}</>
+                                )}
+                                <span className="text-gray-400 dark:text-gray-500">
+                                  {entry.knockoutPrediction.predicted_context === "90min" ? "90m" : "+"}
+                                </span>
+                                <span className="tabular-nums">
+                                  {entry.prediction.home_score}–{entry.prediction.away_score}
+                                </span>
                               </span>
-                              <span className="tabular-nums">
+                            ) : (
+                              <span className="font-mono font-black text-sm text-gray-900 dark:text-white">
                                 {entry.prediction.home_score}–{entry.prediction.away_score}
                               </span>
-                            </span>
-                          ) : (
-                            <span className="font-mono font-black text-sm text-gray-900 dark:text-white">
-                              {entry.prediction.home_score}–{entry.prediction.away_score}
-                            </span>
-                          )}
+                            )}
 
-                          {entry.tier && entry.tier !== "wrong" && (
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${TIER_STYLE[entry.tier] ?? ""}`}>
-                              {TIER_LABEL[entry.tier] ?? entry.tier}
-                            </span>
-                          )}
-                          {entry.bonusMultiplier && (
-                            <span className="text-xs font-black px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400">
-                              ×{entry.bonusMultiplier}
-                            </span>
-                          )}
-                          {entry.points !== null && (
-                            <span className="font-black text-brand-600 dark:text-brand-400 text-sm w-14 text-right">
-                              +{entry.points} pts
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-xs text-gray-400 dark:text-gray-600 italic">Pas de prono</span>
-                      )}
+                            {/* Tier badge (groupes seulement) */}
+                            {!isKO && entry.tier && entry.tier !== "wrong" && (
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${TIER_STYLE[entry.tier] ?? ""}`}>
+                                {TIER_LABEL[entry.tier] ?? entry.tier}
+                              </span>
+                            )}
+                            {entry.bonusMultiplier && (
+                              <span className="text-xs font-black px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400">
+                                ×{entry.bonusMultiplier}
+                              </span>
+                            )}
+                            {entry.points !== null && (
+                              <span className="font-black text-brand-600 dark:text-brand-400 text-sm w-14 text-right">
+                                +{entry.points} pts
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-gray-400 dark:text-gray-600 italic">Pas de prono</span>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Détail KO — deuxième ligne */}
+                    {isKO && entry.prediction && entry.knockoutBreakdown && (
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${entry.knockoutBreakdown.qualifierPts > 0 ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400" : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"}`}>
+                          {entry.knockoutBreakdown.qualifierPts > 0 ? "✓" : "✗"} Qualifié +{entry.knockoutBreakdown.qualifierPts}
+                        </span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${entry.knockoutBreakdown.contextPts > 0 ? "bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-400" : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"}`}>
+                          {entry.knockoutBreakdown.contextPts > 0 ? "✓" : "✗"} Contexte +{entry.knockoutBreakdown.contextPts}
+                        </span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${entry.knockoutBreakdown.scorePts > 0 ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400" : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"}`}>
+                          Score +{entry.knockoutBreakdown.scorePts}
+                        </span>
+                        {entry.isUniqueExact && (
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
+                            ⭐ Unique
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
