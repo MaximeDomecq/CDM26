@@ -134,15 +134,18 @@ export function calculateKnockoutPoints(
   let tier: KnockoutTier = "wrong";
   let scorePts = 0;
 
-  if (isExact) {
-    tier = "exact";
-    scorePts = 3 + (isUniqueExact ? 1 : 0);
-  } else if (isGoodDiff) {
-    tier = "goal_diff";
-    scorePts = 2;
+  // Les points de score (exact / diff) ne sont attribués que si le qualifié est correct
+  if (qualifierPts > 0) {
+    if (isExact) {
+      tier = "exact";
+      scorePts = 3 + (isUniqueExact ? 1 : 0);
+    } else if (isGoodDiff) {
+      tier = "goal_diff";
+      scorePts = 2;
+    }
   }
 
-  // Consolation "bon nombre de buts" : uniquement si 0 pts au total (qualifié + contexte + score)
+  // Consolation "bon nombre de buts" : uniquement si 0 pts sur tout (qualifié + contexte + score)
   if (qualifierPts === 0 && contextPts === 0 && scorePts === 0 && isGoodTotal) {
     tier = "total_goals";
     scorePts = 1;
