@@ -138,11 +138,14 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
   const homeNum = parseInt(home);
   const awayNum = parseInt(away);
   const scoreIsValid = home !== "" && away !== "" && !isNaN(homeNum) && !isNaN(awayNum);
-  // Only conflict: 90min context with a draw (knockout in 90min can't end in a draw)
-  // "+" context: user enters 120min score → draw or win are both valid
-  const contextScoreConflict = isKnockout && scoreIsValid && context === "90min"
-    ? homeNum === awayNum
-    : false;
+  const scoreDraw = scoreIsValid && homeNum === awayNum;
+  // Draw impossible at 90min
+  const contextScoreConflict = isKnockout && scoreIsValid && context === "90min" && scoreDraw;
+  // Score winner must match the chosen qualifier (unless draw = pens possible with "+" context)
+  const qualifierScoreConflict = isKnockout && scoreIsValid && !!qualifier && !scoreDraw && (
+    (qualifier === match.home_team && awayNum > homeNum) ||
+    (qualifier === match.away_team && homeNum > awayNum)
+  );
 
   // Bonus availability
   const canSelectX2 = 1 - usedX2 + (savedBonus === 2 ? 1 : 0) > 0;
@@ -150,7 +153,7 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
   const displayRemainingX2 = Math.max(0, 1 - usedX2 + (savedBonus === 2 ? 1 : 0));
   const displayRemainingX3 = Math.max(0, 1 - usedX3 + (savedBonus === 3 ? 1 : 0));
   const knockoutCanSave = isKnockout
-    ? !!qualifier && !!context && scoreIsValid && !contextScoreConflict
+    ? !!qualifier && !!context && scoreIsValid && !contextScoreConflict && !qualifierScoreConflict
     : scoreIsValid;
 
   // Scoring — group stage
@@ -196,7 +199,7 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
     const a = parseInt(away);
     if (isNaN(h) || isNaN(a) || home === "" || away === "") return;
     if (parseISO(match.kickoff_at) <= new Date()) return;
-    if (isKnockout && (!qualifier || !context || contextScoreConflict)) return;
+    if (isKnockout && (!qualifier || !context || contextScoreConflict || qualifierScoreConflict)) return;
 
     setSaving(true);
     const supabase = createClient();
@@ -547,6 +550,11 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
                     {contextScoreConflict && (
                       <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
                         Score nul impossible si victoire en temps réglementaire
+                      </p>
+                    )}
+                    {qualifierScoreConflict && (
+                      <p className="text-[11px] text-red-600 dark:text-red-400 mt-1 font-bold">
+                        Le score ne peut pas faire gagner l&apos;équipe adverse de ton qualifié
                       </p>
                     )}
                   </div>
