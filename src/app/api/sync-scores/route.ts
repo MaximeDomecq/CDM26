@@ -126,6 +126,7 @@ export async function GET(req: NextRequest) {
         duration: "REGULAR" | "EXTRA_TIME" | "PENALTY_SHOOTOUT" | null;
         fullTime: { home: number | null; away: number | null };
         extraTime: { home: number | null; away: number | null } | null;
+        penalties: { home: number | null; away: number | null } | null;
       };
     }[]
   };
@@ -149,21 +150,34 @@ export async function GET(req: NextRequest) {
 
     const isKO = m.stage !== "GROUP_STAGE";
 
+    // For group stage: home_score = fullTime (= 90-min final)
     const fields: Record<string, unknown> = { home_score: home, away_score: away };
 
     if (isKO) {
-      // winner_team
       if (m.score.winner === "HOME_TEAM") fields.winner_team = homeFr;
       else if (m.score.winner === "AWAY_TEAM") fields.winner_team = awayFr;
 
-      // match_end_type
-      if (m.score.duration === "REGULAR") fields.match_end_type = "90min";
-      else if (m.score.duration === "EXTRA_TIME") fields.match_end_type = "aet";
-      else if (m.score.duration === "PENALTY_SHOOTOUT") fields.match_end_type = "pens";
-
-      // extra time scores (cumulative at 120min)
-      fields.extra_time_home_score = m.score.extraTime?.home ?? null;
-      fields.extra_time_away_score = m.score.extraTime?.away ?? null;
+      if (m.score.duration === "REGULAR") {
+        fields.match_end_type = "90min";
+      } else if (m.score.duration === "EXTRA_TIME") {
+        fields.match_end_type = "aet";
+        // home_score = fullTime = 120-min cumulative (already set above)
+        // extra_time_home_score stores the ET contribution (for reference)
+        fields.extra_time_home_score = m.score.extraTime?.home ?? null;
+        fields.extra_time_away_score = m.score.extraTime?.away ?? null;
+      } else if (m.score.duration === "PENALTY_SHOOTOUT") {
+        fields.match_end_type = "pens";
+        const penH = m.score.penalties?.home ?? 0;
+        const penA = m.score.penalties?.away ?? 0;
+        const etH = m.score.extraTime?.home ?? 0;
+        const etA = m.score.extraTime?.away ?? 0;
+        // home_score = 90-min (= 120-min play score, since pens don't extend play)
+        fields.home_score = home - etH - penH;
+        fields.away_score = away - etA - penA;
+        // extra_time stores penalty goals for TAB display
+        fields.extra_time_home_score = penH;
+        fields.extra_time_away_score = penA;
+      }
     }
 
     // Group matches: skip if already set. KO matches: always upsert (winner_team may be missing).

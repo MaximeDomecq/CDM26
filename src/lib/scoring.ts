@@ -86,12 +86,14 @@ export interface KnockoutPrediction {
 }
 
 export interface KnockoutResult {
-  home_score: number;                    // fullTime
+  // home_score = 90-min for REGULAR, 120-min for AET, 120-min play score for PENS
+  // extra_time_home_score = penalty goals for PENS (display only), ET contribution for AET
+  home_score: number;
   away_score: number;
-  extra_time_home_score: number | null;  // score cumulatif à 120 min (null si 90min)
+  extra_time_home_score: number | null;
   extra_time_away_score: number | null;
   match_end_type: "90min" | "aet" | "pens";
-  winner_team: string;                   // équipe qualifiée
+  winner_team: string;
 }
 
 export type KnockoutTier = "exact" | "goal_diff" | "total_goals" | "wrong";
@@ -115,17 +117,11 @@ export function calculateKnockoutPoints(
   const qualifierPts = prediction.qualifier_team === result.winner_team ? 2 : 0;
   const contextPts = prediction.predicted_context === resultContext ? 1 : 0;
 
-  // Score à comparer selon le contexte prédit
-  // Si '90min' → on compare au score de 90 min (fullTime)
-  // Si '+' → on compare au score à 120 min (extraTime si dispo, sinon fullTime = même nul pour tab)
-  const compHome =
-    prediction.predicted_context === "90min"
-      ? result.home_score
-      : (result.extra_time_home_score ?? result.home_score);
-  const compAway =
-    prediction.predicted_context === "90min"
-      ? result.away_score
-      : (result.extra_time_away_score ?? result.away_score);
+  // home_score is always the play score (90-min for regular, 120-min for aet/pens)
+  // For "+" predictions: home_score = 120-min play score for all match types
+  // For "90min" predictions: home_score = 90-min (and contextPts=0 for aet/pens anyway)
+  const compHome = result.home_score;
+  const compAway = result.away_score;
 
   const isExact = prediction.home_score === compHome && prediction.away_score === compAway;
   const isGoodDiff = prediction.home_score - prediction.away_score === compHome - compAway;

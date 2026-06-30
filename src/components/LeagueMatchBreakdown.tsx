@@ -82,11 +82,12 @@ export default function LeagueMatchBreakdown({ breakdown }: Props) {
         const isPens = item.matchEndType === "pens";
         const predictedCount = item.entries.filter((e) => e.prediction !== null).length;
 
-        // Pour les matchs aux T.A.B. : afficher le score à 120 min et dériver le résultat des penalties
-        const displayHome = isPens && item.extraTimeHomeScore !== null ? item.extraTimeHomeScore : item.homeScore;
-        const displayAway = isPens && item.extraTimeAwayScore !== null ? item.extraTimeAwayScore : item.awayScore;
-        const penHome = isPens && item.homeScore !== null && item.extraTimeHomeScore !== null ? item.homeScore - item.extraTimeHomeScore : null;
-        const penAway = isPens && item.awayScore !== null && item.extraTimeAwayScore !== null ? item.awayScore - item.extraTimeAwayScore : null;
+        // home_score = play score (90-min for regular/pens, 120-min for aet)
+        // For pens: extra_time stores penalty goals for TAB display
+        const displayHome = item.homeScore;
+        const displayAway = item.awayScore;
+        const penHome = isPens ? item.extraTimeHomeScore : null;
+        const penAway = isPens ? item.extraTimeAwayScore : null;
 
         return (
           <div
