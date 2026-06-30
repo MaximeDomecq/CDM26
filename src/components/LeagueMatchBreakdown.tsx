@@ -26,6 +26,8 @@ export interface MatchBreakdownItem {
   kickoffAt: string;
   homeScore: number | null;
   awayScore: number | null;
+  extraTimeHomeScore: number | null;
+  extraTimeAwayScore: number | null;
   phase: string;
   matchEndType: string | null;
   winnerTeam: string | null;
@@ -77,7 +79,14 @@ export default function LeagueMatchBreakdown({ breakdown }: Props) {
         const cestTime = parseISO(item.kickoffAt);
         const isFinished = item.homeScore !== null;
         const isKO = item.phase !== "Groupe";
+        const isPens = item.matchEndType === "pens";
         const predictedCount = item.entries.filter((e) => e.prediction !== null).length;
+
+        // Pour les matchs aux T.A.B. : afficher le score à 120 min et dériver le résultat des penalties
+        const displayHome = isPens && item.extraTimeHomeScore !== null ? item.extraTimeHomeScore : item.homeScore;
+        const displayAway = isPens && item.extraTimeAwayScore !== null ? item.extraTimeAwayScore : item.awayScore;
+        const penHome = isPens && item.homeScore !== null && item.extraTimeHomeScore !== null ? item.homeScore - item.extraTimeHomeScore : null;
+        const penAway = isPens && item.awayScore !== null && item.extraTimeAwayScore !== null ? item.awayScore - item.extraTimeAwayScore : null;
 
         return (
           <div
@@ -95,13 +104,19 @@ export default function LeagueMatchBreakdown({ breakdown }: Props) {
                   <span>{item.homeTeam}</span>
                   {isFinished ? (
                     <span className="font-black text-base px-1 text-gray-900 dark:text-white">
-                      {item.homeScore}–{item.awayScore}
+                      {displayHome}–{displayAway}
                     </span>
                   ) : (
                     <span className="text-gray-400 dark:text-gray-600 font-bold px-1">vs</span>
                   )}
                   <span>{item.awayTeam}</span>
                   <span>{flag(item.awayTeam)}</span>
+                  {/* Badge T.A.B. avec résultat des penalties */}
+                  {isPens && penHome !== null && penAway !== null && (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400">
+                      {penHome}–{penAway} T.A.B.
+                    </span>
+                  )}
                   {/* Qualifier winner badge */}
                   {isKO && item.winnerTeam && (
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400">

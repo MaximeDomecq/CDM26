@@ -337,6 +337,8 @@ export default async function LeagueDetailPage({
       kickoffAt: match.kickoff_at,
       homeScore: match.home_score,
       awayScore: match.away_score,
+      extraTimeHomeScore: match.extra_time_home_score ?? null,
+      extraTimeAwayScore: match.extra_time_away_score ?? null,
       phase: match.phase,
       matchEndType: match.match_end_type ?? null,
       winnerTeam: match.winner_team ?? null,
