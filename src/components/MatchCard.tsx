@@ -466,10 +466,12 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
 
               {/* ── Saisie KNOCKOUT ── */}
               {isKnockout && (
-                <div className="flex flex-col gap-3">
-                  {/* 1. Qualifier */}
+                <div className="flex flex-col gap-4">
+
+                  {/* Étape 1 — Qualifier */}
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5 flex items-center gap-1.5">
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-brand-600 text-white text-[9px] font-black shrink-0">1</span>
                       Qui se qualifie ?
                     </p>
                     <div className="flex gap-2">
@@ -478,88 +480,135 @@ export default function MatchCard({ match, prediction, locked, userId, freshScor
                           key={team}
                           onClick={() => setQualifier(team)}
                           className={clsx(
-                            "flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl border text-sm font-bold transition-all",
+                            "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border font-bold transition-all",
                             qualifier === team
-                              ? "border-brand-500 bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-400"
+                              ? "border-brand-500 bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-400 shadow-sm"
                               : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
                           )}
                         >
-                          <span>{flag(team)}</span>
+                          <span className="text-lg">{flag(team)}</span>
                           <span className="truncate text-xs">{team}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* 2. Context */}
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">
-                      Comment ?
-                    </p>
-                    <div className="flex gap-2">
-                      {(["90min", "+"] as const).map((ctx) => (
-                        <button
-                          key={ctx}
-                          onClick={() => setContext(ctx)}
-                          className={clsx(
-                            "flex-1 py-2 px-3 rounded-xl border text-sm font-bold transition-all",
-                            context === ctx
-                              ? "border-brand-500 bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-400"
-                              : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
-                          )}
-                        >
-                          {ctx === "90min" ? "90 min" : "+ (prol. / TAB)"}
-                        </button>
-                      ))}
+                  {/* Étape 2 — Contexte (apparaît après qualifier) */}
+                  {qualifier && (
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5 flex items-center gap-1.5">
+                        <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-brand-600 text-white text-[9px] font-black shrink-0">2</span>
+                        Comment se qualifie {flag(qualifier)} {qualifier} ?
+                      </p>
+                      <div className="flex gap-2">
+                        {(["90min", "+"] as const).map((ctx) => (
+                          <button
+                            key={ctx}
+                            onClick={() => setContext(ctx)}
+                            className={clsx(
+                              "flex-1 py-2.5 px-3 rounded-xl border text-sm font-bold transition-all",
+                              context === ctx
+                                ? "border-brand-500 bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-400"
+                                : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
+                            )}
+                          >
+                            {ctx === "90min" ? "⏱ Victoire 90 min" : "⚡ Prol. / T.A.B."}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* 3. Score */}
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">
-                      Score à {context === "+" ? "120 min" : "90 min"}
-                      {context === "90min" && <span className="normal-case font-normal ml-1">(sans match nul)</span>}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number" min={0} max={20} value={home}
-                        onChange={(e) => setHome(e.target.value)}
-                        placeholder="0"
-                        className="w-14 text-center border border-gray-200 dark:border-gray-700 rounded-xl py-2 text-lg font-black bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                      />
-                      <span className="text-gray-400 dark:text-gray-600 font-black text-xl">–</span>
-                      <input
-                        type="number" min={0} max={20} value={away}
-                        onChange={(e) => setAway(e.target.value)}
-                        placeholder="0"
-                        className="w-14 text-center border border-gray-200 dark:border-gray-700 rounded-xl py-2 text-lg font-black bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                      />
+                  {/* Étape 3 — Score (apparaît après contexte) */}
+                  {qualifier && context && (
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 flex items-center gap-1.5">
+                        <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-brand-600 text-white text-[9px] font-black shrink-0">3</span>
+                        Score à {context === "+" ? "120 min" : "90 min"}
+                        {context === "90min" && <span className="normal-case font-normal">(pas de nul)</span>}
+                      </p>
+                      <div className="flex items-start gap-2">
+                        {/* Home */}
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={clsx(
+                            "text-[10px] font-bold leading-tight text-center block w-16 truncate",
+                            qualifier === match.home_team ? "text-brand-600 dark:text-brand-400" : "text-gray-400 dark:text-gray-500"
+                          )}>
+                            {flag(match.home_team)} {match.home_team}
+                          </span>
+                          <input
+                            type="number" min={0} max={20} value={home}
+                            onChange={(e) => setHome(e.target.value)}
+                            placeholder="0"
+                            className={clsx(
+                              "w-16 text-center border rounded-xl py-2 text-xl font-black bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-gray-300 dark:placeholder:text-gray-600",
+                              qualifier === match.home_team ? "border-brand-400 dark:border-brand-600" : "border-gray-200 dark:border-gray-700"
+                            )}
+                          />
+                        </div>
+                        <span className="text-gray-400 dark:text-gray-600 font-black text-2xl mt-6">–</span>
+                        {/* Away */}
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={clsx(
+                            "text-[10px] font-bold leading-tight text-center block w-16 truncate",
+                            qualifier === match.away_team ? "text-brand-600 dark:text-brand-400" : "text-gray-400 dark:text-gray-500"
+                          )}>
+                            {flag(match.away_team)} {match.away_team}
+                          </span>
+                          <input
+                            type="number" min={0} max={20} value={away}
+                            onChange={(e) => setAway(e.target.value)}
+                            placeholder="0"
+                            className={clsx(
+                              "w-16 text-center border rounded-xl py-2 text-xl font-black bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-gray-300 dark:placeholder:text-gray-600",
+                              qualifier === match.away_team ? "border-brand-400 dark:border-brand-600" : "border-gray-200 dark:border-gray-700"
+                            )}
+                          />
+                        </div>
+                      </div>
+                      {contextScoreConflict && (
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1.5">
+                          Score nul impossible si victoire en temps réglementaire
+                        </p>
+                      )}
+                      {qualifierScoreConflict && (
+                        <p className="text-[11px] text-red-600 dark:text-red-400 mt-1.5 font-bold">
+                          Le score ne peut pas faire gagner l&apos;équipe adverse de ton qualifié
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Bouton enregistrer — pleine largeur, séparé */}
+                  {qualifier && context && (
+                    <div className="flex flex-col gap-1">
                       <button
                         onClick={save}
                         disabled={saving || !knockoutCanSave}
                         className={clsx(
-                          "flex-1 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-40",
+                          "w-full py-3 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-40",
                           hasSavedPrediction
                             ? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                             : "bg-brand-600 hover:bg-brand-700 text-white"
                         )}
                       >
-                        {saving ? "…" : hasSavedPrediction ? "Modifier" : "Valider"}
+                        {saving ? "Enregistrement…" : hasSavedPrediction ? "✎ Modifier le prono" : "✓ Enregistrer le prono"}
                       </button>
+                      {!scoreIsValid && !contextScoreConflict && !qualifierScoreConflict && (
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 text-center">
+                          Entre un score pour enregistrer
+                        </p>
+                      )}
                     </div>
-                    {contextScoreConflict && (
-                      <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
-                        Score nul impossible si victoire en temps réglementaire
-                      </p>
-                    )}
-                    {qualifierScoreConflict && (
-                      <p className="text-[11px] text-red-600 dark:text-red-400 mt-1 font-bold">
-                        Le score ne peut pas faire gagner l&apos;équipe adverse de ton qualifié
-                      </p>
-                    )}
-                  </div>
+                  )}
+                  {/* Hint si qualifier pas encore choisi */}
+                  {!qualifier && (
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500 text-center">
+                      Choisis d&apos;abord qui se qualifie
+                    </p>
+                  )}
 
-                  {/* 4. Joker (optionnel) */}
+                  {/* Joker (optionnel) */}
                   <BonusSelector
                     bonus={bonus} setBonus={setBonus}
                     canSelectX2={canSelectX2} canSelectX3={canSelectX3}
